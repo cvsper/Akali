@@ -1,0 +1,49 @@
+id: prize_winner
+name: "Fake Prize/Lottery Winner"
+category: data_theft
+difficulty: low
+description: "Fake notification claiming prize or lottery win"
+
+subject: "Congratulations! You've Won $50,000"
+
+from_name: "Prize Distribution Center"
+from_email_pattern: "winners@prize-center.com"
+
+body: |
+  CONGRATULATIONS {recipient_name}!
+
+  Your email address was randomly selected in our Annual Prize Drawing.
+
+  Prize Amount: $50,000 USD
+  Drawing Date: {current_date}
+  Winner ID: WN-{recipient_id}
+
+  To claim your prize, verify your identity:
+  {tracking_url}
+
+  You will need to provide:
+  - Full name and address
+  - Phone number
+  - Bank account for direct deposit
+  - Copy of government ID
+
+  Claim within 10 days or prize will be forfeited.
+
+  Congratulations again!
+  Prize Distribution Center
+
+indicators:
+  - "Unexpected prize or lottery win"
+  - "You didn't enter any contest"
+  - "Request for personal/financial information"
+  - "Government ID request (identity theft)"
+  - "Deadline pressure"
+
+education_points:
+  - "If you didn't enter, you didn't win"
+  - "Real contests notify winners through official channels"
+  - "Never provide bank info or ID to claim 'prizes'"
+  - "This is often a setup for identity theft or advance fee fraud"
+
+tracking_url: "https://{tracking_domain}/prize/{campaign_id}/{recipient_id}"
+landing_page: "prize_claim.html"

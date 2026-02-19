@@ -47,16 +47,16 @@
 ## Implementation Tasks (20 total)
 
 ### Training System (Tasks 1-4)
-- [ ] Task 1: Training module framework
-- [ ] Task 2: OWASP Top 10 lessons (10 modules)
-- [ ] Task 3: Progress tracker & certificates
-- [ ] Task 4: CLI integration (`akali train`)
+- [x] Task 1: Training module framework
+- [x] Task 2: OWASP Top 10 lessons (10 modules)
+- [x] Task 3: Progress tracker & certificates
+- [x] Task 4: CLI integration (`akali train`)
 
 ### Phishing Simulation (Tasks 5-8)
-- [ ] Task 5: Email template library (20 templates)
-- [ ] Task 6: Campaign engine & scheduler
-- [ ] Task 7: Click tracking & landing pages
-- [ ] Task 8: Reporting & metrics dashboard
+- [x] Task 5: Email template library (20 templates)
+- [x] Task 6: Campaign engine & scheduler
+- [x] Task 7: Click tracking & landing pages
+- [x] Task 8: Reporting & metrics dashboard
 
 ### Secrets Vault (Tasks 9-12)
 - [x] Task 9: Vault client library

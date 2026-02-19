@@ -1,0 +1,42 @@
+id: office365_quota
+name: "Fake Office 365 Storage Alert"
+category: credential_theft
+difficulty: low
+description: "Fake Microsoft Office 365 storage quota warning"
+
+subject: "Microsoft Office 365: Mailbox Storage Full"
+
+from_name: "Microsoft Office 365"
+from_email_pattern: "no-reply@office365-support.com"
+
+body: |
+  Dear {recipient_name},
+
+  Your mailbox storage is 98% full (24.5 GB of 25 GB used).
+
+  To prevent email delivery failures, please upgrade your storage or delete old emails:
+
+  {tracking_url}
+
+  Action required within 24 hours to avoid service disruption.
+
+  Thank you,
+  Microsoft Office 365 Team
+
+  © 2024 Microsoft Corporation. All rights reserved.
+
+indicators:
+  - "Domain mismatch (office365-support.com not microsoft.com)"
+  - "Generic greeting"
+  - "Urgency (24 hour deadline)"
+  - "Storage percentage seems specific but is fake"
+  - "Real Microsoft emails come from @microsoft.com"
+
+education_points:
+  - "Check sender domain carefully - Microsoft uses @microsoft.com"
+  - "Office 365 storage warnings appear in the app, not just email"
+  - "Hover over links to see real destination"
+  - "Microsoft will never ask for your password via email"
+
+tracking_url: "https://{tracking_domain}/o365/{campaign_id}/{recipient_id}"
+landing_page: "office365_login.html"

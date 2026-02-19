@@ -1,0 +1,47 @@
+id: benefits_enrollment
+name: "Fake Benefits Enrollment"
+category: data_theft
+difficulty: medium
+description: "Fake HR benefits enrollment to harvest personal information"
+
+subject: "Annual Benefits Enrollment - Action Required"
+
+from_name: "Benefits Administration"
+from_email_pattern: "benefits@{similar_domain}"
+
+body: |
+  Dear {recipient_name},
+
+  Annual benefits open enrollment is now underway.
+
+  You must complete your elections by Friday, {deadline_date} or you will lose
+  coverage for the following year.
+
+  Review and enroll:
+  {tracking_url}
+
+  You will need to provide:
+  - Social Security Number
+  - Date of Birth
+  - Dependent information
+  - Banking information for HSA/FSA
+
+  Questions? Contact HR at hr@company.com or x5500.
+
+  Benefits Administration Team
+  {company_name}
+
+indicators:
+  - "Request for highly sensitive personal information (SSN)"
+  - "Deadline pressure"
+  - "Similar but not exact company domain"
+  - "Real benefits enrollment uses known third-party platforms"
+
+education_points:
+  - "Never provide SSN via email links"
+  - "Benefits enrollment uses official platforms (like Workday, ADP)"
+  - "Verify benefits communications with HR directly"
+  - "Real enrollment systems are accessed through known URLs"
+
+tracking_url: "https://{tracking_domain}/benefits/{campaign_id}/{recipient_id}"
+landing_page: "benefits_portal.html"

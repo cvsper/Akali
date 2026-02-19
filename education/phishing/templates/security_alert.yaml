@@ -1,0 +1,48 @@
+id: security_alert
+name: "Fake Security Alert"
+category: credential_theft
+difficulty: medium
+description: "Fake security alert about suspicious activity"
+
+subject: "⚠️ Security Alert: Suspicious Login Detected"
+
+from_name: "Security Team"
+from_email_pattern: "security-alerts@{similar_domain}"
+
+body: |
+  Hi {recipient_name},
+
+  We detected a suspicious login attempt on your account from:
+
+  IP Address: 185.220.101.47
+  Location: Moscow, Russia
+  Device: Windows PC
+  Time: {current_time}
+
+  If this was you, you can ignore this message.
+
+  If this was NOT you, please secure your account immediately:
+
+  {tracking_url}
+
+  Failure to act within 2 hours may result in account lockout for your protection.
+
+  Stay secure,
+  Security Operations Center
+  {company_name}
+
+indicators:
+  - "Creates panic with 'suspicious activity' claim"
+  - "Short time window to act (2 hours)"
+  - "Threatening account lockout"
+  - "Link to 'secure' account"
+  - "Real security teams rarely use email for urgent matters"
+
+education_points:
+  - "Real security alerts usually come through in-app notifications"
+  - "Don't panic - verify through official channels"
+  - "Go directly to the website, don't click email links"
+  - "Enable two-factor authentication to prevent unauthorized access"
+
+tracking_url: "https://{tracking_domain}/secure/{campaign_id}/{recipient_id}"
+landing_page: "security_verification.html"

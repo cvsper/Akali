@@ -1,0 +1,50 @@
+id: vendor_payment
+name: "Fake Vendor Payment Change"
+category: financial_fraud
+difficulty: high
+description: "Compromised vendor email changing payment information"
+
+subject: "URGENT: Updated Banking Information for Invoice Payments"
+
+from_name: "Jessica Martinez"
+from_email_pattern: "{contact_name}@{vendor_domain}"
+
+body: |
+  Hi {recipient_name},
+
+  Quick heads up - we've changed banks and need to update our payment information
+  in your accounts payable system ASAP.
+
+  Please update our banking details for all future payments:
+
+  Previous Bank: Wells Fargo
+  New Bank: First Internet Bank
+
+  New Account Number: 8472910384
+  New Routing Number: 042000314
+  Swift Code: FIBKUS44
+
+  Please confirm you've made this update. We have several outstanding invoices
+  that need to be paid to the new account.
+
+  Thanks for your quick action on this!
+
+  Jessica Martinez
+  Accounts Receivable Manager
+  Acme Supplies Inc.
+  jessica.martinez@acmesupplies.com
+
+indicators:
+  - "Urgent banking change request"
+  - "May come from compromised real vendor email"
+  - "Requests immediate update to payment information"
+  - "Common in business email compromise (BEC) attacks"
+  - "Changes large payment destinations"
+
+education_points:
+  - "Always verify banking changes through a phone call (not email)"
+  - "Use a known phone number, not one from the email"
+  - "Require multi-person approval for vendor banking changes"
+  - "Vendor banking change fraud costs businesses billions annually"
+
+tracking_url: null  # No link needed for this type

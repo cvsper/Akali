@@ -241,6 +241,36 @@ For more help: https://github.com/sevs/akali
     train_cert_parser.add_argument("agent", help="Agent ID")
     train_cert_parser.add_argument("--module", help="Specific module ID")
 
+    # Phishing simulation commands (Phase 6)
+    phish_parser = subparsers.add_parser("phish", help="Phishing simulation")
+    phish_subparsers = phish_parser.add_subparsers(dest="phish_command")
+
+    phish_subparsers.add_parser("list-templates", help="List phishing email templates")
+
+    phish_create_parser = phish_subparsers.add_parser("create-campaign", help="Create phishing campaign")
+    phish_create_parser.add_argument("name", help="Campaign name")
+    phish_create_parser.add_argument("--template", required=True, help="Template ID")
+    phish_create_parser.add_argument("--targets", required=True, help="Targets JSON file")
+    phish_create_parser.add_argument("--description", help="Campaign description")
+
+    phish_list_parser = phish_subparsers.add_parser("list-campaigns", help="List campaigns")
+    phish_list_parser.add_argument("--status", choices=["draft", "scheduled", "active", "paused", "completed", "cancelled"], help="Filter by status")
+
+    phish_send_parser = phish_subparsers.add_parser("send", help="Send campaign emails")
+    phish_send_parser.add_argument("campaign_id", help="Campaign ID")
+    phish_send_parser.add_argument("--dry-run", action="store_true", help="Test mode (no emails sent)")
+
+    phish_report_parser = phish_subparsers.add_parser("report", help="View campaign report")
+    phish_report_parser.add_argument("campaign_id", help="Campaign ID")
+
+    phish_export_parser = phish_subparsers.add_parser("export", help="Export campaign report")
+    phish_export_parser.add_argument("campaign_id", help="Campaign ID")
+    phish_export_parser.add_argument("--output", help="Output file path")
+
+    phish_tracker_parser = phish_subparsers.add_parser("start-tracker", help="Start click tracking server")
+    phish_tracker_parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
+    phish_tracker_parser.add_argument("--port", type=int, default=5555, help="Port to run on")
+
     # Vault commands (Phase 6)
     vault_parser = subparsers.add_parser("vault", help="HashiCorp Vault operations")
     vault_subparsers = vault_parser.add_subparsers(dest="vault_command")
@@ -283,6 +313,44 @@ For more help: https://github.com/sevs/akali
 
     vault_policies_check_parser = vault_policies_subparsers.add_parser("check", help="Check for due rotations")
     vault_policies_check_parser.add_argument("--mock", action="store_true", help="Use mock Vault client")
+
+    # DLP commands
+    dlp_parser = subparsers.add_parser("dlp", help="Data Loss Prevention (DLP) operations")
+    dlp_subparsers = dlp_parser.add_subparsers(dest="dlp_command")
+
+    dlp_scan_parser = dlp_subparsers.add_parser("scan", help="Scan for PII violations")
+    dlp_scan_parser.add_argument("target", help="File, directory, or payload to scan")
+    dlp_scan_parser.add_argument("--type", choices=["file", "git", "api"], default="file", help="Scan type")
+
+    dlp_violations_parser = dlp_subparsers.add_parser("violations", help="Manage DLP violations")
+    dlp_violations_subparsers = dlp_violations_parser.add_subparsers(dest="dlp_violations_command")
+
+    dlp_violations_list_parser = dlp_violations_subparsers.add_parser("list", help="List violations")
+    dlp_violations_list_parser.add_argument("--severity", choices=["critical", "high", "medium", "low"], help="Filter by severity")
+
+    dlp_violations_show_parser = dlp_violations_subparsers.add_parser("show", help="Show violation details")
+    dlp_violations_show_parser.add_argument("violation_id", help="Violation ID")
+
+    dlp_violations_clear_parser = dlp_violations_subparsers.add_parser("clear", help="Clear all violations")
+
+    dlp_policies_parser = dlp_subparsers.add_parser("policies", help="Manage DLP policies")
+    dlp_policies_subparsers = dlp_policies_parser.add_subparsers(dest="dlp_policies_command")
+
+    dlp_policies_list_parser = dlp_policies_subparsers.add_parser("list", help="List policies")
+
+    dlp_policies_enable_parser = dlp_policies_subparsers.add_parser("enable", help="Enable policy")
+    dlp_policies_enable_parser.add_argument("policy_id", help="Policy ID")
+
+    dlp_policies_disable_parser = dlp_policies_subparsers.add_parser("disable", help="Disable policy")
+    dlp_policies_disable_parser.add_argument("policy_id", help="Policy ID")
+
+    dlp_monitor_parser = dlp_subparsers.add_parser("monitor", help="Start DLP monitoring")
+    dlp_monitor_parser.add_argument("--file", action="store_true", help="Monitor file system")
+    dlp_monitor_parser.add_argument("--git", action="store_true", help="Install git hook or check staged")
+    dlp_monitor_parser.add_argument("--api", action="store_true", help="Start API monitor demo")
+    dlp_monitor_parser.add_argument("--paths", nargs="+", help="Paths to monitor (for file monitor)")
+    dlp_monitor_parser.add_argument("--port", type=int, default=5050, help="API monitor port")
+    dlp_monitor_parser.add_argument("--action", choices=["check", "install"], default="check", help="Git action")
 
     # Status command
     subparsers.add_parser("status", help="Show Akali status")
@@ -495,6 +563,29 @@ For more help: https://github.com/sevs/akali
             else:
                 train_parser.print_help()
 
+        elif args.command == "phish":
+            if args.phish_command == "list-templates":
+                cli.phish_list_templates()
+            elif args.phish_command == "create-campaign":
+                cli.phish_create_campaign(
+                    name=args.name,
+                    template_id=args.template,
+                    targets_file=args.targets,
+                    description=args.description
+                )
+            elif args.phish_command == "list-campaigns":
+                cli.phish_list_campaigns(status=args.status)
+            elif args.phish_command == "send":
+                cli.phish_send(args.campaign_id, dry_run=args.dry_run)
+            elif args.phish_command == "report":
+                cli.phish_report(args.campaign_id)
+            elif args.phish_command == "export":
+                cli.phish_export(args.campaign_id, output=args.output)
+            elif args.phish_command == "start-tracker":
+                cli.phish_start_tracker(host=args.host, port=args.port)
+            else:
+                phish_parser.print_help()
+
         elif args.command == "vault":
             if args.vault_command == "get":
                 cli.vault_get(args.path, version=args.version, mock=args.mock)
@@ -527,6 +618,43 @@ For more help: https://github.com/sevs/akali
 
             else:
                 vault_parser.print_help()
+
+        elif args.command == "dlp":
+            if args.dlp_command == "scan":
+                cli.dlp_scan(args.target, scan_type=args.type)
+
+            elif args.dlp_command == "violations":
+                if args.dlp_violations_command == "list":
+                    cli.dlp_violations_list(severity=args.severity)
+                elif args.dlp_violations_command == "show":
+                    cli.dlp_violations_show(args.violation_id)
+                elif args.dlp_violations_command == "clear":
+                    cli.dlp_violations_clear()
+                else:
+                    dlp_violations_parser.print_help()
+
+            elif args.dlp_command == "policies":
+                if args.dlp_policies_command == "list":
+                    cli.dlp_policies_list()
+                elif args.dlp_policies_command == "enable":
+                    cli.dlp_policies_enable(args.policy_id)
+                elif args.dlp_policies_command == "disable":
+                    cli.dlp_policies_disable(args.policy_id)
+                else:
+                    dlp_policies_parser.print_help()
+
+            elif args.dlp_command == "monitor":
+                if args.file:
+                    cli.dlp_monitor_file(paths=args.paths)
+                elif args.git:
+                    cli.dlp_monitor_git(action=args.action)
+                elif args.api:
+                    cli.dlp_monitor_api(port=args.port)
+                else:
+                    dlp_monitor_parser.print_help()
+
+            else:
+                dlp_parser.print_help()
 
         elif args.command == "status":
             cli.status()

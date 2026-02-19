@@ -1,0 +1,43 @@
+id: tax_refund
+name: "Fake IRS Tax Refund"
+category: credential_theft
+difficulty: medium
+description: "Fake IRS notification about tax refund"
+
+subject: "IRS Tax Refund Notification - Action Required"
+
+from_name: "Internal Revenue Service"
+from_email_pattern: "no-reply@irs-treasury.gov"
+
+body: |
+  Dear Taxpayer,
+
+  According to our records, you are eligible for a tax refund of $1,247.86.
+
+  To claim your refund, please verify your identity and provide direct deposit information:
+
+  {tracking_url}
+
+  Refund Code: IRS-2024-{recipient_id}
+
+  This refund will expire if not claimed within 30 days.
+
+  Sincerely,
+  Internal Revenue Service
+  U.S. Department of Treasury
+
+indicators:
+  - "IRS never initiates contact via email"
+  - "Domain is irs-treasury.gov (real is irs.gov)"
+  - "Promises unexpected money"
+  - "Requests personal/financial information"
+  - "Expiration threat"
+
+education_points:
+  - "The IRS NEVER initiates contact via email"
+  - "IRS communicates through postal mail"
+  - "Don't click links claiming to be from the IRS"
+  - "Report IRS impersonation scams to phishing@irs.gov"
+
+tracking_url: "https://{tracking_domain}/irs/{campaign_id}/{recipient_id}"
+landing_page: "irs_portal.html"

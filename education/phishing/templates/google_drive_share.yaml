@@ -1,0 +1,41 @@
+id: google_drive_share
+name: "Fake Google Drive Share"
+category: credential_theft
+difficulty: low
+description: "Fake Google Drive document share notification"
+
+subject: "{sender_name} shared 'Q4 Budget Report' with you"
+
+from_name: "Google Drive"
+from_email_pattern: "no-reply@google-drive-share.com"
+
+body: |
+  {sender_name} has shared a file with you on Google Drive.
+
+  Q4 Budget Report.xlsx
+
+  [Open in Google Drive]
+  {tracking_url}
+
+  This link will expire in 48 hours.
+
+  Google Drive: Create, share and keep all your stuff in one place.
+
+  © 2024 Google LLC
+  1600 Amphitheatre Parkway, Mountain View, CA 94043
+
+indicators:
+  - "Domain is google-drive-share.com not google.com"
+  - "Expiration creates urgency"
+  - "Sender you may not know"
+  - "Generic Google branding attempt"
+  - "Real Google Drive uses @drive.google.com"
+
+education_points:
+  - "Google Drive emails come from @drive-shares-noreply@google.com"
+  - "Hover over links to verify they go to drive.google.com"
+  - "Don't enter Google credentials on non-Google domains"
+  - "Real Google Drive shares are visible in your Drive without clicking email links"
+
+tracking_url: "https://{tracking_domain}/gdrive/{campaign_id}/{recipient_id}"
+landing_page: "google_drive_login.html"

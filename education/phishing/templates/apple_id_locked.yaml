@@ -1,0 +1,46 @@
+id: apple_id_locked
+name: "Fake Apple ID Locked"
+category: credential_theft
+difficulty: low
+description: "Fake Apple notification claiming locked account"
+
+subject: "Your Apple ID has been locked"
+
+from_name: "Apple Support"
+from_email_pattern: "no-reply@apple-support-id.com"
+
+body: |
+  Dear Apple Customer,
+
+  Your Apple ID ({recipient_email}) has been locked due to suspicious activity.
+
+  To unlock your account and verify your identity, please click below:
+
+  {tracking_url}
+
+  If you don't unlock within 24 hours, your account will be permanently disabled
+  and you will lose access to:
+  - iCloud storage and backups
+  - App Store purchases
+  - Apple Music
+  - Find My iPhone
+
+  Unlock My Apple ID
+
+  Apple Support Team
+
+indicators:
+  - "Domain is apple-support-id.com not apple.com"
+  - "Threatening permanent account loss"
+  - "24 hour deadline"
+  - "Generic greeting"
+  - "List of things you'll lose (creates fear)"
+
+education_points:
+  - "Apple sends emails from @apple.com or @email.apple.com"
+  - "Apple won't threaten permanent account deletion via email"
+  - "Unlock accounts through appleid.apple.com directly"
+  - "Enable two-factor authentication on Apple ID"
+
+tracking_url: "https://{tracking_domain}/appleid/{campaign_id}/{recipient_id}"
+landing_page: "apple_id_unlock.html"

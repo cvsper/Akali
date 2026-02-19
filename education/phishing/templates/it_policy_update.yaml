@@ -1,0 +1,49 @@
+id: it_policy_update
+name: "Fake IT Policy Update"
+category: credential_theft
+difficulty: medium
+description: "Fake IT policy update requiring credential verification"
+
+subject: "Mandatory: IT Security Policy Acknowledgment"
+
+from_name: "IT Security"
+from_email_pattern: "it-security@{similar_domain}"
+
+body: |
+  All Employees,
+
+  Our IT Security Policy has been updated effective immediately.
+
+  All employees must review and acknowledge the new policy by EOD tomorrow.
+
+  Review and acknowledge policy:
+  {tracking_url}
+
+  The updated policy includes:
+  - New password requirements (16 characters)
+  - Multi-factor authentication mandate
+  - Device encryption requirements
+  - Data handling procedures
+
+  Failure to acknowledge will result in account suspension.
+
+  Thank you for your cooperation.
+
+  IT Security Team
+  {company_name}
+
+indicators:
+  - "Threat of account suspension"
+  - "Immediate action required"
+  - "Similar but not exact domain"
+  - "Mass email addressing 'All Employees'"
+  - "Real IT policy updates go through official channels"
+
+education_points:
+  - "IT policies are distributed through official channels (intranet, portal)"
+  - "Companies give reasonable time for policy reviews"
+  - "Verify sender domain matches your company's real domain"
+  - "When in doubt, contact IT directly"
+
+tracking_url: "https://{tracking_domain}/policy/{campaign_id}/{recipient_id}"
+landing_page: "policy_portal.html"

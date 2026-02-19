@@ -1,0 +1,42 @@
+id: zoom_meeting
+name: "Fake Zoom Meeting Invite"
+category: credential_theft
+difficulty: medium
+description: "Fake Zoom meeting invitation with credential harvesting link"
+
+subject: "You've been invited to a Zoom Meeting"
+
+from_name: "Zoom Video Communications"
+from_email_pattern: "no-reply@zoom-meetings.com"
+
+body: |
+  {sender_name} is inviting you to a scheduled Zoom meeting.
+
+  Topic: Q4 Planning Meeting
+  Time: Tomorrow, 2:00 PM EST
+
+  Join Zoom Meeting:
+  {tracking_url}
+
+  Meeting ID: 847 2910 3847
+  Passcode: 729104
+
+  Can't join? Your Zoom client may need an update. Click above to update and join.
+
+  ---
+  Zoom Video Communications, Inc.
+
+indicators:
+  - "Domain is zoom-meetings.com not zoom.us"
+  - "Meeting from unknown person"
+  - "Request to 'update' Zoom (really credential harvesting)"
+  - "Generic meeting topic"
+
+education_points:
+  - "Zoom official domain is zoom.us"
+  - "Verify meeting invites through calendar or direct communication"
+  - "Don't download 'Zoom updates' from email links"
+  - "Real Zoom meeting links use zoom.us domain"
+
+tracking_url: "https://{tracking_domain}/zoom/{campaign_id}/{recipient_id}"
+landing_page: "zoom_join.html"

@@ -1,0 +1,44 @@
+id: payroll_update
+name: "Fake Payroll/HR Update"
+category: credential_theft
+difficulty: medium
+description: "Fake HR email requesting payroll or W-2 update"
+
+subject: "Action Required: Update Your Direct Deposit Information"
+
+from_name: "HR Department"
+from_email_pattern: "hr@{similar_domain}"
+
+body: |
+  Hello {recipient_name},
+
+  We are updating our payroll system and need all employees to verify their
+  direct deposit information by EOD Friday.
+
+  Please log in to the employee portal and confirm your banking details:
+
+  {tracking_url}
+
+  Failure to complete this step may result in delayed payment processing.
+
+  If you have questions, contact HR at extension 5500.
+
+  Thank you,
+  Human Resources
+  {company_name}
+
+indicators:
+  - "Request for sensitive financial information"
+  - "Deadline pressure"
+  - "Suspicious sender domain"
+  - "Link instead of directing to known portal"
+  - "Generic contact info"
+
+education_points:
+  - "HR/Payroll updates should come through official channels"
+  - "Never update financial info via email links"
+  - "Use bookmarked/known URLs for employee portals"
+  - "When in doubt, call HR directly using known phone numbers"
+
+tracking_url: "https://{tracking_domain}/hr-portal/{campaign_id}/{recipient_id}"
+landing_page: "hr_portal.html"

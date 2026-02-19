@@ -1,0 +1,44 @@
+id: docusign_fake
+name: "Fake DocuSign Document"
+category: credential_theft
+difficulty: medium
+description: "Fake DocuSign notification requesting signature"
+
+subject: "Please DocuSign: Employment Agreement"
+
+from_name: "DocuSign"
+from_email_pattern: "documents@docusign-online.com"
+
+body: |
+  You have a new document to review and sign.
+
+  From: HR Department - {company_name}
+  Document: Employment Agreement 2024
+
+  [Review and Sign Document]
+  {tracking_url}
+
+  This document requires your signature within 5 business days.
+
+  About DocuSign:
+  DocuSign is the global standard for electronic signature.
+
+  Questions? Contact support@docusign.com
+
+  © DocuSign, Inc.
+
+indicators:
+  - "Domain is docusign-online.com not docusign.com or docusign.net"
+  - "Generic sender (HR Department)"
+  - "Unexpected document"
+  - "Urgency (5 day deadline)"
+  - "Real DocuSign has distinctive blue branding"
+
+education_points:
+  - "DocuSign official domains: docusign.com, docusign.net"
+  - "Verify document requests through direct communication"
+  - "Check sender email carefully"
+  - "Real DocuSign emails have consistent branding and design"
+
+tracking_url: "https://{tracking_domain}/docusign/{campaign_id}/{recipient_id}"
+landing_page: "docusign_viewer.html"

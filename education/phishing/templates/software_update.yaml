@@ -1,0 +1,47 @@
+id: software_update
+name: "Fake Critical Software Update"
+category: malware
+difficulty: medium
+description: "Fake software update notification delivering malware"
+
+subject: "Critical Security Update Required - Windows Defender"
+
+from_name: "Microsoft Windows Update"
+from_email_pattern: "updates@windows-security.com"
+
+body: |
+  Important Security Notice
+
+  A critical security vulnerability has been discovered in Windows Defender.
+
+  Severity: Critical (CVSS 9.8)
+  Impact: Remote Code Execution
+  Affected: All Windows 10/11 systems
+
+  Install security update immediately:
+  {tracking_url}
+
+  Your system is currently vulnerable. This update must be installed within
+  24 hours to protect against active exploits.
+
+  Download: SecurityUpdate-KB5034185.exe (4.2 MB)
+
+  Microsoft Security Response Center
+
+  © Microsoft Corporation
+
+indicators:
+  - "Domain is windows-security.com not microsoft.com"
+  - "Software updates don't come via email"
+  - "Request to download .exe file"
+  - "Creates urgency with 'active exploits'"
+  - "Real Windows updates happen through Windows Update"
+
+education_points:
+  - "Microsoft never distributes updates via email"
+  - "Use Windows Update in Settings for all updates"
+  - "Never download executable files from emails"
+  - "Fake updates are a common malware delivery method"
+
+tracking_url: "https://{tracking_domain}/update/{campaign_id}/{recipient_id}"
+landing_page: "windows_update.html"

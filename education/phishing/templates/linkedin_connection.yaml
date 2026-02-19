@@ -1,0 +1,42 @@
+id: linkedin_connection
+name: "Fake LinkedIn Connection Request"
+category: credential_theft
+difficulty: low
+description: "Fake LinkedIn notification to steal credentials"
+
+subject: "Sarah Johnson wants to connect on LinkedIn"
+
+from_name: "LinkedIn"
+from_email_pattern: "notifications@linkedin-mail.com"
+
+body: |
+  Hi {recipient_name},
+
+  Sarah Johnson wants to connect with you on LinkedIn.
+
+  Sarah Johnson
+  Senior Product Manager at Tech Corp
+
+  View Sarah's profile and accept:
+  {tracking_url}
+
+  You have 12 pending connection requests.
+
+  © 2024 LinkedIn Corporation. All rights reserved.
+
+  This email was intended for {recipient_name}. Unsubscribe | Help
+
+indicators:
+  - "Domain is linkedin-mail.com not linkedin.com"
+  - "Generic message (real LinkedIn is more detailed)"
+  - "Creates curiosity to click"
+  - "Fake connection request"
+
+education_points:
+  - "LinkedIn sends emails from @linkedin.com or @e.linkedin.com"
+  - "Check connection requests in the LinkedIn app, not email"
+  - "Hover over links to verify destination"
+  - "Social engineering uses curiosity to trick you"
+
+tracking_url: "https://{tracking_domain}/linkedin/{campaign_id}/{recipient_id}"
+landing_page: "linkedin_login.html"

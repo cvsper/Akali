@@ -1,0 +1,44 @@
+id: ceo_fraud
+name: "CEO Fraud / Business Email Compromise"
+category: impersonation
+difficulty: high
+description: "Attacker impersonates CEO/executive requesting urgent wire transfer"
+
+subject: "URGENT: Wire Transfer Needed Today"
+
+from_name: "John Smith"
+from_email_pattern: "{ceo_name}@{similar_domain}"
+
+body: |
+  Hi {recipient_name},
+
+  I'm in back-to-back meetings all day but need your help with something urgent.
+
+  We're finalizing a confidential acquisition and I need you to process a wire transfer
+  for $50,000 to our legal counsel ASAP. Time sensitive.
+
+  Account details:
+  Bank: First National Bank
+  Account: 1234567890
+  Routing: 021000021
+
+  Please confirm once sent. Keep this confidential until the deal closes.
+
+  Thanks,
+  {ceo_name}
+  CEO, {company_name}
+
+indicators:
+  - "Urgency and time pressure"
+  - "Request for secrecy/confidentiality"
+  - "Executive authority/intimidation"
+  - "Email from similar domain (not exact match)"
+  - "Request to bypass normal procedures"
+
+education_points:
+  - "Always verify large financial requests through a secondary channel (phone call)"
+  - "Check the sender's email domain carefully"
+  - "Be suspicious of urgent requests that bypass normal approval processes"
+  - "CEO fraud costs businesses $26 billion+ annually"
+
+tracking_url: "https://{tracking_domain}/confirm/{campaign_id}/{recipient_id}"

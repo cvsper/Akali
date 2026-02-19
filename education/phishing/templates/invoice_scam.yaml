@@ -1,0 +1,44 @@
+id: invoice_scam
+name: "Fake Invoice Payment"
+category: malware
+difficulty: medium
+description: "Fake invoice with malicious attachment or link"
+
+subject: "Invoice #INV-2024-8472 - Payment Overdue"
+
+from_name: "Accounts Receivable"
+from_email_pattern: "billing@{vendor_name}.com"
+
+body: |
+  Dear {recipient_name},
+
+  This is a reminder that Invoice #INV-2024-8472 for $2,847.50 is now 15 days overdue.
+
+  To avoid late fees and service interruption, please remit payment immediately.
+
+  View invoice and payment options:
+  {tracking_url}
+
+  If you have already processed payment, please disregard this notice.
+
+  Questions? Contact our billing department at billing@acmecorp.com
+
+  Thank you,
+  Accounts Receivable
+  Acme Corporation
+
+indicators:
+  - "Invoice for service you don't use"
+  - "Overdue payment pressure"
+  - "Threat of service interruption"
+  - "Sender from unfamiliar vendor"
+  - "Generic contact information"
+
+education_points:
+  - "Verify all invoices with your purchasing/accounting department"
+  - "Don't open invoice attachments from unknown senders"
+  - "Check if your company has a relationship with the vendor"
+  - "Invoice scams often contain ransomware or credential stealers"
+
+tracking_url: "https://{tracking_domain}/invoice/{campaign_id}/{recipient_id}"
+landing_page: "invoice_viewer.html"

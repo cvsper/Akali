@@ -1,0 +1,48 @@
+id: bank_fraud_alert
+name: "Fake Bank Fraud Alert"
+category: credential_theft
+difficulty: high
+description: "Fake bank fraud alert creating urgency"
+
+subject: "🚨 FRAUD ALERT: Unusual Activity Detected"
+
+from_name: "Fraud Prevention Team"
+from_email_pattern: "alerts@secure-banking-alerts.com"
+
+body: |
+  FRAUD ALERT
+
+  Dear {recipient_name},
+
+  We detected unusual activity on your account ending in 4782:
+
+  Transaction: $847.50 at Amazon.com
+  Location: Shanghai, China
+  Time: 2:47 AM EST
+
+  If you did NOT authorize this transaction, please verify your account immediately:
+
+  {tracking_url}
+
+  Your card has been temporarily locked for your protection.
+
+  To unlock, verify your identity within 2 hours.
+
+  Chase Fraud Prevention Team
+  1-800-CHASE-FRAUD
+
+indicators:
+  - "Creates panic with fraud claim"
+  - "Domain not affiliated with real bank"
+  - "Short deadline (2 hours)"
+  - "Card number partial (last 4 digits) to seem legitimate"
+  - "Real banks call for fraud alerts, not just email"
+
+education_points:
+  - "Banks call you for fraud alerts, they don't send urgent emails"
+  - "Never click links in fraud alert emails"
+  - "Call your bank directly using the number on your card"
+  - "Banks will never ask for full credentials via email"
+
+tracking_url: "https://{tracking_domain}/bank/{campaign_id}/{recipient_id}"
+landing_page: "bank_verification.html"

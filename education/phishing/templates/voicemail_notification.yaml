@@ -1,0 +1,46 @@
+id: voicemail_notification
+name: "Fake Voicemail Notification"
+category: malware
+difficulty: low
+description: "Fake voicemail notification with malicious attachment"
+
+subject: "New Voicemail from 202-555-0147"
+
+from_name: "Voicemail Service"
+from_email_pattern: "voicemail@{company_domain}"
+
+body: |
+  You have 1 new voicemail
+
+  From: 202-555-0147
+  Duration: 0:47
+  Received: {current_time}
+
+  Play voicemail:
+  {tracking_url}
+
+  Or download: voicemail_020724.mp3.exe
+
+  Voicemail transcript:
+  "Hi, this is Sarah from... [click to hear full message]"
+
+  To manage voicemail settings, log in to the phone portal.
+
+  ---
+  This is an automated message from your phone system.
+
+indicators:
+  - "Suspicious file extension (.mp3.exe is executable, not audio)"
+  - "Voicemail from unknown number"
+  - "Partial transcript to create curiosity"
+  - "Generic voicemail service sender"
+  - "Real voicemail systems have distinct notification patterns"
+
+education_points:
+  - "Audio files are .mp3, .wav, .m4a - NOT .exe"
+  - "Never open executable files from email (.exe, .bat, .scr, .cmd)"
+  - "Check voicemail through your phone or official portal"
+  - "Voicemail phishing often contains ransomware"
+
+tracking_url: "https://{tracking_domain}/voicemail/{campaign_id}/{recipient_id}"
+landing_page: "voicemail_player.html"

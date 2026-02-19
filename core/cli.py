@@ -824,6 +824,198 @@ class AkaliCLI:
                 print(f"   Path: {cert['certificate_path']}")
                 print()
 
+    # Phase 6: Phishing Simulation
+
+    def phish_list_templates(self):
+        """List available phishing templates."""
+        from education.phishing.campaign_manager import CampaignManager
+
+        manager = CampaignManager()
+        templates = manager.list_templates()
+
+        print("\n📧 Akali Phishing Templates:\n")
+        for template in templates:
+            difficulty_emoji = {'low': '🟢', 'medium': '🟡', 'high': '🔴'}.get(template['difficulty'], '⚪')
+            print(f"{difficulty_emoji} {template['id']}")
+            print(f"   {template['name']}")
+            print(f"   Category: {template['category']} | Difficulty: {template['difficulty']}")
+            print(f"   {template['description']}")
+            print()
+
+        print(f"Total templates: {len(templates)}")
+
+    def phish_create_campaign(self, name: str, template_id: str, targets_file: str,
+                               description: Optional[str] = None):
+        """Create a new phishing campaign."""
+        from education.phishing.campaign_manager import CampaignManager
+        import json
+
+        manager = CampaignManager()
+
+        # Load targets from JSON file
+        try:
+            with open(targets_file, 'r') as f:
+                targets = json.load(f)
+        except Exception as e:
+            print(f"❌ Failed to load targets file: {e}")
+            return
+
+        # Validate targets format
+        if not isinstance(targets, list):
+            print("❌ Targets file must contain a JSON array")
+            return
+
+        for target in targets:
+            if 'email' not in target:
+                print(f"❌ Target missing 'email' field: {target}")
+                return
+
+        # Create campaign
+        try:
+            campaign_id = manager.create_campaign(
+                name=name,
+                template_id=template_id,
+                targets=targets,
+                description=description
+            )
+            print(f"\n✅ Campaign created: {campaign_id}")
+            print(f"   Name: {name}")
+            print(f"   Template: {template_id}")
+            print(f"   Targets: {len(targets)}")
+            print(f"\nNext steps:")
+            print(f"  1. Start tracking server: akali phish start-tracker")
+            print(f"  2. Send emails: akali phish send {campaign_id}")
+        except Exception as e:
+            print(f"❌ Failed to create campaign: {e}")
+
+    def phish_list_campaigns(self, status: Optional[str] = None):
+        """List phishing campaigns."""
+        from education.phishing.campaign_manager import CampaignManager
+
+        manager = CampaignManager()
+        campaigns = manager.list_campaigns(status=status)
+
+        if not campaigns:
+            print("No campaigns found")
+            return
+
+        print(f"\n📋 Phishing Campaigns ({len(campaigns)}):\n")
+        for campaign in campaigns:
+            status_emoji = {
+                'draft': '📝',
+                'scheduled': '📅',
+                'active': '⚡',
+                'paused': '⏸️',
+                'completed': '✅',
+                'cancelled': '❌'
+            }.get(campaign.status, '•')
+
+            print(f"{status_emoji} {campaign.id}: {campaign.name}")
+            print(f"   Template: {campaign.template_id}")
+            print(f"   Status: {campaign.status}")
+            print(f"   Created: {campaign.created_at}")
+            print()
+
+    def phish_send(self, campaign_id: str, dry_run: bool = False):
+        """Send campaign emails."""
+        from education.phishing.campaign_manager import CampaignManager
+        from education.phishing.email_sender import EmailSender
+
+        manager = CampaignManager()
+        campaign = manager.get_campaign(campaign_id)
+
+        if not campaign:
+            print(f"❌ Campaign not found: {campaign_id}")
+            return
+
+        if campaign.status not in ['draft', 'paused']:
+            print(f"⚠️  Campaign status is '{campaign.status}'. Continue? (yes/no): ", end='')
+            if input().lower() != 'yes':
+                print("Cancelled")
+                return
+
+        # Get targets
+        targets = manager.get_campaign_targets(campaign_id)
+
+        if not targets:
+            print("❌ No targets found for campaign")
+            return
+
+        print(f"\n📧 Sending Campaign: {campaign.name}")
+        print(f"   Template: {campaign.template_id}")
+        print(f"   Targets: {len(targets)}")
+        if dry_run:
+            print("   Mode: DRY RUN (no emails will be sent)")
+
+        # Initialize sender
+        sender = EmailSender(smtp_host='localhost', smtp_port=1025)
+
+        # Test SMTP connection
+        if not dry_run:
+            print("\nTesting SMTP connection...")
+            if not sender.test_connection():
+                print("\n❌ SMTP connection failed. Is mailhog running?")
+                print("   Start with: docker run -p 1025:1025 -p 8025:8025 mailhog/mailhog")
+                return
+            print("✅ SMTP connected\n")
+
+        # Send emails
+        results = sender.send_campaign_emails(
+            campaign_id=campaign_id,
+            targets=targets,
+            template_id=campaign.template_id,
+            config=campaign.config,
+            delay_seconds=0.5,
+            dry_run=dry_run
+        )
+
+        # Update campaign status and record sends
+        if not dry_run:
+            for target in targets:
+                if target['recipient_email'] not in results['failures']:
+                    manager.record_email_sent(target['id'])
+
+            if campaign.status == 'draft':
+                manager.update_campaign_status(campaign_id, 'active')
+
+        # Print results
+        print(f"\n📊 Results:")
+        print(f"   Sent: {results['sent']}")
+        print(f"   Failed: {results['failed']}")
+
+        if results['failures']:
+            print(f"\n   Failed addresses:")
+            for email in results['failures']:
+                print(f"     • {email}")
+
+    def phish_report(self, campaign_id: str):
+        """View campaign report."""
+        from education.phishing.report_generator import ReportGenerator
+
+        generator = ReportGenerator()
+        generator.print_campaign_report(campaign_id)
+
+    def phish_export(self, campaign_id: str, output: Optional[str] = None):
+        """Export campaign report to JSON."""
+        from education.phishing.report_generator import ReportGenerator
+
+        generator = ReportGenerator()
+
+        try:
+            report_path = generator.export_json_report(campaign_id, output)
+            print(f"\n✅ Report exported: {report_path}")
+        except Exception as e:
+            print(f"❌ Failed to export report: {e}")
+
+    def phish_start_tracker(self, host: str = '127.0.0.1', port: int = 5555):
+        """Start click tracking server."""
+        from education.phishing.click_tracker import start_server
+
+        print("\n⚠️  Make sure campaigns have been created first!")
+        print("   Tracker will record clicks and show education pages.\n")
+
+        start_server(host=host, port=port, debug=True)
+
     # Phase 6: Vault
 
     def vault_get(self, path: str, version: Optional[int] = None, mock: bool = False):
@@ -1041,3 +1233,265 @@ class AkaliCLI:
                 print()
         except Exception as e:
             print(f"❌ Error: {e}")
+
+    # Phase 6: DLP System
+
+    def dlp_scan(self, target: str, scan_type: str = "file"):
+        """Scan target for PII violations."""
+        from education.dlp.content_inspector import ContentInspector
+
+        inspector = ContentInspector()
+
+        print(f"🔍 Scanning {target} for sensitive data...")
+
+        if scan_type == "file":
+            import os
+            if os.path.isfile(target):
+                violation = inspector.inspect_file(target)
+                if violation:
+                    self._print_violation(violation)
+                else:
+                    print("✅ No PII detected")
+            elif os.path.isdir(target):
+                violations = inspector.inspect_directory(target, recursive=True)
+                print(f"\n📊 Scan complete: {len(violations)} violations found")
+                for v in violations[:10]:
+                    self._print_violation(v)
+                if len(violations) > 10:
+                    print(f"\n... and {len(violations) - 10} more violations")
+            else:
+                print(f"❌ Target not found: {target}")
+
+        elif scan_type == "git":
+            violation = inspector.inspect_git_staged(target)
+            if violation:
+                self._print_violation(violation)
+            else:
+                print("✅ No PII detected in staged changes")
+
+        elif scan_type == "api":
+            import json
+            try:
+                with open(target, 'r') as f:
+                    payload = json.load(f)
+                violation = inspector.inspect_api_request("/api/test", payload)
+                if violation:
+                    self._print_violation(violation)
+                else:
+                    print("✅ No PII detected in payload")
+            except Exception as e:
+                print(f"❌ Error reading payload: {e}")
+
+    def dlp_violations_list(self, severity: Optional[str] = None):
+        """List DLP violations."""
+        from education.dlp.content_inspector import ContentInspector
+
+        inspector = ContentInspector()
+        violations = inspector.get_violations(severity=severity)
+
+        if not violations:
+            print("No violations found")
+            return
+
+        print(f"\n📋 DLP Violations ({len(violations)}):\n")
+        for v in violations:
+            severity_emoji = {'critical': '🔴', 'high': '🟠', 'medium': '🟡', 'low': '🔵'}.get(v.severity, '⚪')
+            print(f"{severity_emoji} {v.violation_id}")
+            print(f"   Source: {v.source} - {v.source_path}")
+            print(f"   Severity: {v.severity.upper()}")
+            print(f"   PII Matches: {len(v.pii_matches)}")
+            if v.action_taken:
+                print(f"   Action: {v.action_taken.upper()}")
+            print()
+
+    def dlp_violations_show(self, violation_id: str):
+        """Show detailed violation information."""
+        from education.dlp.content_inspector import ContentInspector
+        from pathlib import Path
+
+        inspector = ContentInspector()
+        violations = inspector.get_violations()
+
+        violation = next((v for v in violations if v.violation_id == violation_id), None)
+
+        if not violation:
+            print(f"❌ Violation not found: {violation_id}")
+            return
+
+        self._print_violation(violation, detailed=True)
+
+    def dlp_violations_clear(self):
+        """Clear all violations."""
+        from education.dlp.content_inspector import ContentInspector
+
+        consent = input("Clear all DLP violations? (yes/no): ")
+        if consent.lower() != "yes":
+            print("❌ Cancelled")
+            return
+
+        inspector = ContentInspector()
+        inspector.clear_violations()
+        print("✅ All violations cleared")
+
+    def dlp_policies_list(self):
+        """List DLP policies."""
+        from education.dlp.policy_engine import PolicyEngine
+
+        engine = PolicyEngine()
+        policies = engine.list_policies()
+
+        print("\n🛡️  DLP Policies:\n")
+        for policy in policies:
+            status = "✅" if policy['enabled'] else "❌"
+            print(f"{status} {policy['id']}")
+            print(f"   {policy['name']}")
+            print(f"   Action: {policy['action'].upper()}")
+            print(f"   Threshold: {policy['severity_threshold']}")
+            print(f"   PII Types: {', '.join(policy['pii_types'][:5])}")
+            if len(policy['pii_types']) > 5:
+                print(f"      ... and {len(policy['pii_types']) - 5} more")
+            print()
+
+    def dlp_policies_enable(self, policy_id: str):
+        """Enable a DLP policy."""
+        from education.dlp.policy_engine import PolicyEngine
+
+        engine = PolicyEngine()
+        if engine.enable_policy(policy_id):
+            print(f"✅ Policy enabled: {policy_id}")
+        else:
+            print(f"❌ Policy not found: {policy_id}")
+
+    def dlp_policies_disable(self, policy_id: str):
+        """Disable a DLP policy."""
+        from education.dlp.policy_engine import PolicyEngine
+
+        engine = PolicyEngine()
+        if engine.disable_policy(policy_id):
+            print(f"✅ Policy disabled: {policy_id}")
+        else:
+            print(f"❌ Policy not found: {policy_id}")
+
+    def dlp_monitor_file(self, paths: Optional[List[str]] = None):
+        """Start file system DLP monitor."""
+        from education.dlp.monitors.file_monitor import FileMonitor
+
+        monitor = FileMonitor(watch_paths=paths)
+        monitor.start()
+
+    def dlp_monitor_git(self, action: str = "check", repo_path: str = "."):
+        """Git DLP monitoring."""
+        from education.dlp.monitors.git_monitor import GitMonitor
+
+        monitor = GitMonitor(repo_path=repo_path)
+
+        if action == "check":
+            violation = monitor.check_staged_changes()
+            if violation and violation.action_taken == 'block':
+                sys.exit(1)
+        elif action == "install":
+            monitor.install_pre_commit_hook()
+        else:
+            print(f"❌ Unknown action: {action}")
+            print("   Available: check, install")
+
+    def dlp_monitor_api(self, port: int = 5050):
+        """Start API DLP monitor demo."""
+        from education.dlp.monitors.api_monitor import create_demo_app
+
+        print("🔍 Starting DLP-enabled demo API server")
+        print(f"Listening on http://localhost:{port}")
+        print("\nDemo endpoints:")
+        print("  POST /api/users - Create user (test PII in request)")
+        print("  GET /api/users/<id> - Get user (test PII in response)")
+        print("  GET /api/stats - View DLP stats")
+        print("\nPress Ctrl+C to stop\n")
+
+        app = create_demo_app()
+        app.run(host='0.0.0.0', port=port, debug=False)
+
+    def _print_violation(self, violation, detailed: bool = False):
+        """Print violation details."""
+        severity_emoji = {'critical': '🔴', 'high': '🟠', 'medium': '🟡', 'low': '🔵'}.get(violation.severity, '⚪')
+
+        print(f"\n{severity_emoji} DLP Violation: {violation.violation_id}")
+        print(f"   Source: {violation.source}")
+        print(f"   Path: {violation.source_path}")
+        print(f"   Severity: {violation.severity.upper()}")
+        print(f"   Timestamp: {violation.timestamp}")
+
+        if violation.action_taken:
+            print(f"   Action: {violation.action_taken.upper()}")
+
+        print(f"\n   PII Detected ({len(violation.pii_matches)}):")
+        for match in violation.pii_matches[:10 if not detailed else None]:
+            print(f"   • {match['pii_type']}: {match['value']}")
+            if match.get('line_number'):
+                print(f"     Line {match['line_number']} (confidence: {match['confidence']:.2f})")
+            elif detailed and match.get('context'):
+                print(f"     Context: {match['context'][:60]}...")
+
+        if not detailed and len(violation.pii_matches) > 10:
+            print(f"   ... and {len(violation.pii_matches) - 10} more PII matches")
+
+        print()
+
+    # Phase 6: Threat Hunting
+
+    def hunt_analyze(self, log_file: str, analysis_type: str = "auto"):
+        """Analyze logs for threats."""
+        from intelligence.hunting.hunt_cli import HuntCLI
+        import json
+
+        cli = HuntCLI()
+        findings = cli.analyze_logs(log_file, analysis_type)
+
+        # Save findings
+        if findings:
+            findings_file = "hunt_findings.json"
+            with open(findings_file, 'w') as f:
+                json.dump(findings, f, indent=2)
+            print(f"\nFindings saved to {findings_file}")
+
+            # Prompt for report
+            generate = input("\nGenerate threat report? (yes/no): ")
+            if generate.lower() == "yes":
+                format_choice = input("Format (markdown/html/json): ") or "markdown"
+                cli.generate_report(findings, format_choice)
+
+    def hunt_ioc(self, indicator: str):
+        """Check IoC against database."""
+        from intelligence.hunting.hunt_cli import HuntCLI
+
+        cli = HuntCLI()
+        cli.check_ioc(indicator)
+
+    def hunt_ioc_import(self, feed_file: str, feed_name: str = "custom"):
+        """Import IoCs from file."""
+        from intelligence.hunting.hunt_cli import HuntCLI
+
+        cli = HuntCLI()
+        cli.import_iocs(feed_file, feed_name)
+
+    def hunt_report(self, findings_file: str, output_format: str = "markdown"):
+        """Generate threat hunting report."""
+        from intelligence.hunting.hunt_cli import HuntCLI
+        import json
+
+        cli = HuntCLI()
+
+        try:
+            with open(findings_file, 'r') as f:
+                findings = json.load(f)
+
+            cli.generate_report(findings, output_format)
+
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def hunt_stats(self):
+        """Show threat hunting statistics."""
+        from intelligence.hunting.hunt_cli import HuntCLI
+
+        cli = HuntCLI()
+        cli.show_stats()

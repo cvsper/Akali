@@ -1,0 +1,44 @@
+id: shipping_notification
+name: "Fake Package Delivery"
+category: malware
+difficulty: low
+description: "Fake shipping notification with malicious link"
+
+subject: "Package Delivery Failed - Action Required"
+
+from_name: "FedEx Delivery Service"
+from_email_pattern: "notifications@fedex-delivery.com"
+
+body: |
+  Dear Customer,
+
+  We attempted to deliver your package (Tracking #: 7849302184) but no one
+  was available to sign.
+
+  To reschedule delivery or pick up at a FedEx location, please click below:
+
+  {tracking_url}
+
+  Your package will be held for 5 business days before being returned to sender.
+
+  Tracking Number: 7849302184
+
+  Thank you for choosing FedEx
+
+  This is an automated message. Please do not reply.
+
+indicators:
+  - "Unexpected package notification"
+  - "Sender domain doesn't match real company (fedex-delivery.com vs fedex.com)"
+  - "Generic greeting (no name)"
+  - "Urgency (5 day deadline)"
+  - "Request to click link for package not ordered"
+
+education_points:
+  - "Verify sender email domain carefully (look for typos/variations)"
+  - "If you didn't order anything, it's likely fake"
+  - "Go directly to the shipper's website and check tracking there"
+  - "Real shippers provide tracking numbers you can verify independently"
+
+tracking_url: "https://{tracking_domain}/track/{campaign_id}/{recipient_id}"
+landing_page: "fedex_tracking.html"
