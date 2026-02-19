@@ -1,0 +1,202 @@
+id: owasp_08_insecure_deserialization
+title: "OWASP #8: Insecure Deserialization"
+description: "Understand deserialization vulnerabilities and how they lead to remote code execution"
+difficulty: advanced
+estimated_time: "20 minutes"
+tags:
+  - owasp
+  - deserialization
+  - rce
+  - serialization
+
+lessons:
+  - title: "What is Insecure Deserialization?"
+    content:
+      - type: text
+        value: |
+          Insecure deserialization occurs when untrusted data is used to create objects. This can lead to
+          remote code execution, replay attacks, injection attacks, and privilege escalation.
+
+      - type: text
+        value: |
+          Serialization converts objects to a format (JSON, XML, binary) for storage or transmission.
+          Deserialization reverses this process, recreating objects from the serialized data.
+
+      - type: warning
+        value: "Deserializing untrusted data is equivalent to running untrusted code!"
+
+      - type: text
+        value: |
+          Common vulnerable serialization formats:
+          • Python pickle
+          • Java serialization
+          • PHP serialize/unserialize
+          • Ruby Marshal
+          • .NET BinaryFormatter
+
+    takeaways:
+      - "Deserialization turns data back into objects"
+      - "Untrusted serialized data can execute arbitrary code"
+      - "Impact: Remote Code Execution (RCE)"
+
+  - title: "Deserialization Attack Example"
+    content:
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE - pickle on untrusted data
+          import pickle
+
+          # Attacker-controlled cookie
+          session_cookie = request.cookies.get('session')
+
+          # ❌ NEVER do this with untrusted data!
+          session_data = pickle.loads(base64.b64decode(session_cookie))
+
+      - type: text
+        value: |
+          Attacker can create a malicious pickle that executes code:
+
+      - type: code
+        language: python
+        value: |
+          import pickle
+          import os
+
+          class Exploit:
+              def __reduce__(self):
+                  # This will execute when unpickled!
+                  return (os.system, ('rm -rf /',))
+
+          malicious_pickle = pickle.dumps(Exploit())
+          # Send this to victim...
+
+      - type: warning
+        value: "The victim's server will execute 'rm -rf /' when deserializing!"
+
+      - type: text
+        value: |
+          Real-world impacts:
+          • Remote code execution
+          • Complete server compromise
+          • Data theft or destruction
+          • Lateral movement in network
+
+    takeaways:
+      - "pickle and similar formats can execute code"
+      - "Never deserialize untrusted data"
+      - "Attackers can craft malicious serialized payloads"
+
+  - title: "Safe Serialization Practices"
+    content:
+      - type: tip
+        value: "Use safe data formats like JSON"
+
+      - type: code
+        language: python
+        value: |
+          # SECURE - Use JSON instead of pickle
+          import json
+
+          # Serialize
+          session_data = {'user_id': 123, 'role': 'user'}
+          serialized = json.dumps(session_data)
+
+          # Deserialize (safe - no code execution)
+          data = json.loads(serialized)  # ✅ JSON doesn't execute code
+
+      - type: tip
+        value: "If you must use pickle, sign the data"
+
+      - type: code
+        language: python
+        value: |
+          import hmac
+          import hashlib
+          import pickle
+
+          SECRET_KEY = 'your-secret-key'
+
+          def sign_data(data):
+              serialized = pickle.dumps(data)
+              signature = hmac.new(
+                  SECRET_KEY.encode(),
+                  serialized,
+                  hashlib.sha256
+              ).hexdigest()
+              return serialized, signature
+
+          def verify_and_load(serialized, signature):
+              expected_sig = hmac.new(
+                  SECRET_KEY.encode(),
+                  serialized,
+                  hashlib.sha256
+              ).hexdigest()
+
+              if not hmac.compare_digest(signature, expected_sig):
+                  raise ValueError("Invalid signature!")
+
+              return pickle.loads(serialized)
+
+      - type: text
+        value: |
+          Best practices:
+          ✅ Use JSON, not pickle/serialize
+          ✅ Validate deserialized data structure
+          ✅ Sign serialized data with HMAC
+          ✅ Use encrypted serialization
+          ✅ Implement integrity checks
+          ✅ Run deserialization in sandboxed environment
+          ✅ Monitor for deserialization attacks
+          ✅ Keep libraries updated
+
+    takeaways:
+      - "Prefer JSON over binary serialization"
+      - "Sign serialized data with HMAC"
+      - "Never trust deserialized data"
+
+quiz:
+  - question: "What is the main danger of insecure deserialization?"
+    options:
+      - "Data loss"
+      - "Remote Code Execution"
+      - "Slow performance"
+      - "Memory leaks"
+    correct_answer: "Remote Code Execution"
+    explanation: "Insecure deserialization can allow attackers to execute arbitrary code on the server."
+
+  - question: "Which serialization format is safer for untrusted data?"
+    options:
+      - "Python pickle"
+      - "JSON"
+      - "PHP serialize"
+      - "Java serialization"
+    correct_answer: "JSON"
+    explanation: "JSON only represents data structures, not executable code. pickle and similar formats can execute code during deserialization."
+
+  - question: "Why is Python's pickle dangerous with untrusted data?"
+    options:
+      - "It's too slow"
+      - "It can execute arbitrary code during deserialization"
+      - "It only works with Python 2"
+      - "It doesn't support all data types"
+    correct_answer: "It can execute arbitrary code during deserialization"
+    explanation: "pickle can execute code through __reduce__ and other magic methods, making it unsafe for untrusted data."
+
+  - question: "How can you make pickle safer?"
+    options:
+      - "Use base64 encoding"
+      - "Sign the serialized data with HMAC"
+      - "Compress the data first"
+      - "Use smaller objects"
+    correct_answer: "Sign the serialized data with HMAC"
+    explanation: "Signing with HMAC ensures the data hasn't been tampered with. However, JSON is still safer than signed pickle."
+
+  - question: "What should you do if you find pickle.loads() on user input?"
+    options:
+      - "Add error handling"
+      - "Replace it with JSON"
+      - "Use pickle.load() instead"
+      - "Add input validation"
+    correct_answer: "Replace it with JSON"
+    explanation: "The best solution is to replace pickle with a safe alternative like JSON. pickle should never be used with untrusted data."

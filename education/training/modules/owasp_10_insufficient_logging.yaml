@@ -1,0 +1,198 @@
+id: owasp_10_insufficient_logging
+title: "OWASP #10: Insufficient Logging & Monitoring"
+description: "Learn why logging and monitoring are critical for security"
+difficulty: beginner
+estimated_time: "18 minutes"
+tags:
+  - owasp
+  - logging
+  - monitoring
+  - incident-response
+
+lessons:
+  - title: "Why Logging and Monitoring Matter"
+    content:
+      - type: text
+        value: |
+          Insufficient logging and monitoring allow attackers to:
+          • Persist in systems undetected
+          • Pivot to other systems
+          • Extract, modify, or destroy data
+          • Cover their tracks
+
+      - type: warning
+        value: "Average time to detect a breach: 207 days (2020 IBM Cost of Data Breach Report)"
+
+      - type: text
+        value: |
+          Without proper logging:
+          • You don't know when you've been breached
+          • You can't investigate incidents
+          • You can't prove compliance
+          • You can't learn from attacks
+
+      - type: text
+        value: |
+          What to log:
+          • Authentication events (success/failure)
+          • Authorization failures
+          • Input validation failures
+          • Application errors and exceptions
+          • High-value transactions
+          • Administrative actions
+
+    takeaways:
+      - "Logging is your security visibility"
+      - "Without logs, you're blind to attacks"
+      - "Breaches often go undetected for months"
+
+  - title: "Common Logging Mistakes"
+    content:
+      - type: code
+        language: python
+        value: |
+          # ❌ BAD - No logging at all
+          def login(username, password):
+              user = authenticate(username, password)
+              if user:
+                  return redirect('/dashboard')
+              return redirect('/login')
+
+      - type: code
+        language: python
+        value: |
+          # ❌ BAD - Logging sensitive data
+          logger.info(f"Login attempt: {username}, password: {password}")
+
+      - type: warning
+        value: "Never log passwords, credit cards, or other sensitive data!"
+
+      - type: code
+        language: python
+        value: |
+          # ❌ BAD - Not enough context
+          logger.error("Database error")  # What query? What table? What user?
+
+      - type: code
+        language: python
+        value: |
+          # ❌ BAD - Logs not centralized or monitored
+          # Writing logs to local files that nobody reads
+
+    takeaways:
+      - "Don't log sensitive data"
+      - "Include sufficient context"
+      - "Centralize and monitor logs"
+
+  - title: "Effective Logging Practices"
+    content:
+      - type: tip
+        value: "Log security-relevant events with context"
+
+      - type: code
+        language: python
+        value: |
+          # ✅ GOOD - Comprehensive security logging
+          import logging
+
+          logger = logging.getLogger(__name__)
+
+          def login(username, password):
+              ip_address = request.remote_addr
+              user_agent = request.headers.get('User-Agent')
+
+              user = authenticate(username, password)
+
+              if user:
+                  logger.info(
+                      f"Login successful: user={username}, "
+                      f"ip={ip_address}, user_agent={user_agent}"
+                  )
+                  return redirect('/dashboard')
+              else:
+                  logger.warning(
+                      f"Login failed: user={username}, "
+                      f"ip={ip_address}, user_agent={user_agent}"
+                  )
+                  return redirect('/login')
+
+      - type: tip
+        value: "Use structured logging (JSON)"
+
+      - type: code
+        language: python
+        value: |
+          import json
+
+          logger.info(json.dumps({
+              'event': 'login_success',
+              'username': username,
+              'ip': ip_address,
+              'timestamp': datetime.now().isoformat(),
+              'session_id': session_id
+          }))
+
+      - type: text
+        value: |
+          Logging best practices:
+          ✅ Log authentication attempts (success/failure)
+          ✅ Log authorization failures
+          ✅ Log input validation failures
+          ✅ Include timestamp, user, IP, action
+          ✅ Use structured logging (JSON)
+          ✅ Centralize logs (ELK, Splunk, CloudWatch)
+          ✅ Set up alerts for suspicious patterns
+          ✅ Retain logs long enough (compliance)
+          ✅ Protect log integrity (immutable storage)
+          ✅ Regular log review and analysis
+
+    takeaways:
+      - "Log security events with full context"
+      - "Use structured logging"
+      - "Centralize and monitor actively"
+
+quiz:
+  - question: "What is the average time to detect a data breach?"
+    options:
+      - "24 hours"
+      - "1 week"
+      - "207 days"
+      - "1 year"
+    correct_answer: "207 days"
+    explanation: "According to IBM's 2020 Cost of Data Breach Report, the average time to detect a breach is 207 days."
+
+  - question: "Should you log passwords?"
+    options:
+      - "Yes, for debugging"
+      - "Yes, but hash them first"
+      - "No, never log passwords"
+      - "Only in development"
+    correct_answer: "No, never log passwords"
+    explanation: "Passwords should NEVER be logged, even hashed. Logs may be viewed by many people and stored in multiple places."
+
+  - question: "What should you log when a user logs in successfully?"
+    options:
+      - "Just the username"
+      - "Username, timestamp, IP address, user agent"
+      - "Password and username"
+      - "Nothing, only log failures"
+    correct_answer: "Username, timestamp, IP address, user agent"
+    explanation: "Log sufficient context to investigate incidents: who, what, when, where. Never log passwords."
+
+  - question: "What is structured logging?"
+    options:
+      - "Logging to a database"
+      - "Logging in JSON format for easy parsing"
+      - "Logging only errors"
+      - "Logging with line numbers"
+    correct_answer: "Logging in JSON format for easy parsing"
+    explanation: "Structured logging uses formats like JSON to make logs machine-readable and easier to search and analyze."
+
+  - question: "Why should logs be centralized?"
+    options:
+      - "To save disk space"
+      - "To enable correlation and monitoring across systems"
+      - "To make logging faster"
+      - "To meet file size limits"
+    correct_answer: "To enable correlation and monitoring across systems"
+    explanation: "Centralized logging allows you to see patterns across systems, correlate events, and monitor for attacks."

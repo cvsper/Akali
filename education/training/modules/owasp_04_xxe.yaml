@@ -1,0 +1,138 @@
+id: owasp_04_xxe
+title: "OWASP #4: XML External Entities (XXE)"
+description: "Learn about XXE vulnerabilities in XML parsers and how to prevent them"
+difficulty: intermediate
+estimated_time: "18 minutes"
+tags:
+  - owasp
+  - xxe
+  - xml
+  - file-disclosure
+
+lessons:
+  - title: "What is XXE?"
+    content:
+      - type: text
+        value: |
+          XML External Entity (XXE) attacks exploit vulnerable XML parsers that process XML input containing
+          a reference to an external entity. Attackers can use XXE to disclose internal files, perform
+          SSRF attacks, or cause denial of service.
+
+      - type: text
+        value: |
+          Impact of XXE:
+          • Read local files (/etc/passwd, config files)
+          • Perform Server-Side Request Forgery (SSRF)
+          • Scan internal network ports
+          • Cause Denial of Service
+          • Execute remote code (in rare cases)
+
+    takeaways:
+      - "XXE exploits XML parsers that process external entities"
+      - "Can lead to file disclosure and SSRF"
+      - "Default XML parsers are often vulnerable"
+
+  - title: "XXE Attack Example"
+    content:
+      - type: text
+        value: |
+          Here's a simple XXE attack to read /etc/passwd:
+
+      - type: code
+        language: xml
+        value: |
+          <?xml version="1.0"?>
+          <!DOCTYPE foo [
+            <!ENTITY xxe SYSTEM "file:///etc/passwd">
+          ]>
+          <userInfo>
+            <firstName>&xxe;</firstName>
+          </userInfo>
+
+      - type: text
+        value: |
+          If the XML parser processes external entities, the file contents will be included
+          in the firstName field and returned to the attacker.
+
+      - type: warning
+        value: "Many XML parsers allow external entities by default"
+
+    takeaways:
+      - "XXE uses ENTITY declarations to reference external resources"
+      - "Attacker can reference local files or remote URLs"
+      - "Default XML configurations are often insecure"
+
+  - title: "Preventing XXE"
+    content:
+      - type: tip
+        value: "Disable external entity processing in XML parsers"
+
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE - Default lxml parser
+          from lxml import etree
+          tree = etree.parse(xml_file)  # ❌ Allows XXE by default
+
+          # SECURE - Disable external entities
+          parser = etree.XMLParser(resolve_entities=False)
+          tree = etree.parse(xml_file, parser)  # ✅ Safe
+
+      - type: code
+        language: python
+        value: |
+          # SECURE - Using defusedxml library
+          import defusedxml.ElementTree as ET
+          tree = ET.parse(xml_file)  # ✅ XXE protection built-in
+
+      - type: text
+        value: |
+          Prevention strategies:
+          • Use defusedxml instead of xml.etree
+          • Disable DTD processing entirely
+          • Disable external entity resolution
+          • Use JSON instead of XML when possible
+          • Validate and sanitize XML input
+          • Keep XML processors updated
+
+    takeaways:
+      - "Disable external entity processing"
+      - "Use defusedxml for Python"
+      - "Consider using JSON instead of XML"
+
+quiz:
+  - question: "What does XXE stand for?"
+    options:
+      - "XML External Execution"
+      - "XML External Entities"
+      - "Cross-XML Exploit"
+      - "eXtended XML Engine"
+    correct_answer: "XML External Entities"
+    explanation: "XXE stands for XML External Entities, a vulnerability where XML parsers process references to external resources."
+
+  - question: "What can an attacker achieve with XXE?"
+    options:
+      - "Inject JavaScript into web pages"
+      - "Read local files from the server"
+      - "Steal session cookies"
+      - "Brute force passwords"
+    correct_answer: "Read local files from the server"
+    explanation: "XXE allows attackers to read local files, perform SSRF, scan networks, and more by referencing external entities."
+
+  - question: "How do you prevent XXE in Python?"
+    options:
+      - "Use xml.etree with default settings"
+      - "Validate XML with regex"
+      - "Use defusedxml library"
+      - "Always use HTTPS"
+    correct_answer: "Use defusedxml library"
+    explanation: "The defusedxml library is designed to prevent XXE and other XML attacks in Python."
+
+  - question: "What is a safer alternative to XML for data exchange?"
+    options:
+      - "CSV"
+      - "JSON"
+      - "Plain text"
+      - "Binary formats"
+    correct_answer: "JSON"
+    explanation: "JSON is often safer and simpler than XML for data exchange, and doesn't have entity processing vulnerabilities."

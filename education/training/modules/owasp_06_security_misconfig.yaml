@@ -1,0 +1,150 @@
+id: owasp_06_security_misconfig
+title: "OWASP #6: Security Misconfiguration"
+description: "Learn about common security misconfigurations and how to harden systems"
+difficulty: beginner
+estimated_time: "20 minutes"
+tags:
+  - owasp
+  - configuration
+  - hardening
+  - security
+
+lessons:
+  - title: "What is Security Misconfiguration?"
+    content:
+      - type: text
+        value: |
+          Security misconfiguration is the most common vulnerability. It occurs when security settings
+          are not defined, implemented, or maintained properly.
+
+      - type: text
+        value: |
+          Common misconfigurations:
+          • Default passwords and accounts
+          • Unnecessary features enabled
+          • Directory listing enabled
+          • Detailed error messages (stack traces)
+          • Missing security headers
+          • Outdated software
+          • Unnecessary ports open
+
+    takeaways:
+      - "Security misconfiguration is extremely common"
+      - "Often results from insecure defaults"
+      - "Requires ongoing maintenance"
+
+  - title: "Examples of Dangerous Misconfigurations"
+    content:
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE - Debug mode in production
+          app = Flask(__name__)
+          app.config['DEBUG'] = True  # ❌ Never in production!
+
+      - type: warning
+        value: "Debug mode exposes stack traces, code, and can allow code execution"
+
+      - type: code
+        language: nginx
+        value: |
+          # VULNERABLE - Directory listing enabled
+          location / {
+              autoindex on;  # ❌ Shows all files
+          }
+
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE - Verbose error messages
+          try:
+              db.execute(query)
+          except Exception as e:
+              return str(e)  # ❌ Leaks internal details
+
+      - type: code
+        language: yaml
+        value: |
+          # VULNERABLE - Default credentials
+          database:
+            username: admin
+            password: admin  # ❌ Change defaults!
+
+    takeaways:
+      - "Disable debug mode in production"
+      - "Don't expose detailed error messages"
+      - "Change all default passwords"
+
+  - title: "Hardening Your Application"
+    content:
+      - type: tip
+        value: "Use security headers to protect against common attacks"
+
+      - type: code
+        language: python
+        value: |
+          # SECURE - Add security headers
+          @app.after_request
+          def add_security_headers(response):
+              response.headers['X-Content-Type-Options'] = 'nosniff'
+              response.headers['X-Frame-Options'] = 'DENY'
+              response.headers['X-XSS-Protection'] = '1; mode=block'
+              response.headers['Strict-Transport-Security'] = 'max-age=31536000'
+              response.headers['Content-Security-Policy'] = "default-src 'self'"
+              return response
+
+      - type: text
+        value: |
+          Hardening checklist:
+          ✅ Disable debug mode in production
+          ✅ Remove unnecessary features and services
+          ✅ Change all default passwords
+          ✅ Keep software updated
+          ✅ Use least privilege principles
+          ✅ Implement proper error handling
+          ✅ Add security headers
+          ✅ Disable directory listing
+          ✅ Configure firewalls
+          ✅ Regular security audits
+
+    takeaways:
+      - "Harden configurations before deployment"
+      - "Use security headers"
+      - "Regular security audits are essential"
+
+quiz:
+  - question: "What is the most common security vulnerability?"
+    options:
+      - "SQL Injection"
+      - "Security Misconfiguration"
+      - "XSS"
+      - "Broken Authentication"
+    correct_answer: "Security Misconfiguration"
+    explanation: "Security misconfiguration is the most common vulnerability because it's easy to overlook security settings."
+
+  - question: "Why is debug mode dangerous in production?"
+    options:
+      - "It makes the app slower"
+      - "It exposes stack traces and internal code"
+      - "It uses more memory"
+      - "It breaks HTTPS"
+    correct_answer: "It exposes stack traces and internal code"
+    explanation: "Debug mode reveals internal implementation details, file paths, and can even allow code execution."
+
+  - question: "What does the X-Frame-Options: DENY header prevent?"
+    options:
+      - "SQL Injection"
+      - "Clickjacking attacks"
+      - "XSS attacks"
+      - "CSRF attacks"
+    correct_answer: "Clickjacking attacks"
+    explanation: "X-Frame-Options: DENY prevents the page from being loaded in iframes, protecting against clickjacking."
+
+  - question: "What should you do with default admin passwords?"
+    options:
+      - "Leave them if they're strong"
+      - "Change them immediately"
+      - "Disable the admin account"
+      - "Use them only locally"
+    correct_answer: "Change them immediately"
+    explanation: "Default passwords are well-known and should always be changed before deployment."

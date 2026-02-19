@@ -1,0 +1,170 @@
+id: owasp_03_sensitive_data
+title: "OWASP #3: Sensitive Data Exposure"
+description: "Learn how to protect sensitive data at rest and in transit"
+difficulty: beginner
+estimated_time: "20 minutes"
+tags:
+  - owasp
+  - encryption
+  - data-protection
+  - privacy
+
+lessons:
+  - title: "What is Sensitive Data Exposure?"
+    content:
+      - type: text
+        value: |
+          Sensitive data exposure occurs when applications don't adequately protect sensitive information
+          such as financial data, healthcare data, PII (Personally Identifiable Information), and credentials.
+
+      - type: text
+        value: |
+          Types of sensitive data:
+          • Passwords and authentication tokens
+          • Credit card numbers
+          • Social Security Numbers (SSN)
+          • Health records
+          • Personal information (PII)
+          • API keys and secrets
+          • Financial data
+
+      - type: warning
+        value: "Failure to encrypt sensitive data can lead to identity theft, fraud, and legal liability"
+
+    takeaways:
+      - "Sensitive data needs protection both at rest and in transit"
+      - "Not all data requires the same level of protection"
+      - "Compliance (GDPR, HIPAA) mandates data protection"
+
+  - title: "Common Data Exposure Vulnerabilities"
+    content:
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE - Sensitive data in URL
+          # URLs are logged, cached, and visible in browser history
+          GET /user/profile?ssn=123-45-6789  # ❌ Never put PII in URLs!
+
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE - Unencrypted data transmission
+          # Attacker can intercept with packet sniffer
+          response = requests.get("http://api.example.com/user/credit-card")  # ❌ Use HTTPS!
+
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE - Sensitive data in logs
+          logger.info(f"User login: {username}, password: {password}")  # ❌ Never log passwords!
+
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE - Unencrypted database fields
+          CREATE TABLE users (
+              credit_card VARCHAR(16)  -- ❌ Should be encrypted!
+          );
+
+    takeaways:
+      - "Never put sensitive data in URLs"
+      - "Always use HTTPS for data transmission"
+      - "Never log passwords or secrets"
+      - "Encrypt sensitive database fields"
+
+  - title: "How to Protect Sensitive Data"
+    content:
+      - type: tip
+        value: "Always use HTTPS/TLS for data in transit"
+
+      - type: code
+        language: python
+        value: |
+          # SECURE - Use HTTPS
+          response = requests.get("https://api.example.com/user/data")
+
+          # Enforce HTTPS in Flask
+          if not request.is_secure:
+              return redirect(request.url.replace("http://", "https://"))
+
+      - type: tip
+        value: "Encrypt sensitive data at rest"
+
+      - type: code
+        language: python
+        value: |
+          from cryptography.fernet import Fernet
+
+          # Generate key (store securely, not in code!)
+          key = Fernet.generate_key()
+          cipher = Fernet(key)
+
+          # Encrypt sensitive data
+          sensitive_data = b"Credit Card: 1234-5678-9012-3456"
+          encrypted = cipher.encrypt(sensitive_data)
+
+          # Decrypt when needed
+          decrypted = cipher.decrypt(encrypted)
+
+      - type: text
+        value: |
+          Best practices:
+          • Use HTTPS everywhere (enforce with HSTS)
+          • Encrypt sensitive database fields
+          • Use strong encryption (AES-256)
+          • Manage encryption keys securely (use a vault)
+          • Implement PFS (Perfect Forward Secrecy)
+          • Minimize data collection (only collect what you need)
+          • Sanitize logs (redact sensitive data)
+          • Set proper cache headers (no-store for sensitive pages)
+
+    takeaways:
+      - "HTTPS is non-negotiable for sensitive data"
+      - "Encrypt data at rest with strong algorithms"
+      - "Manage encryption keys separately from data"
+
+quiz:
+  - question: "Why should sensitive data never be included in URLs?"
+    options:
+      - "URLs are too short"
+      - "URLs are logged, cached, and visible in history"
+      - "URLs only support ASCII characters"
+      - "URLs are slower than POST requests"
+    correct_answer: "URLs are logged, cached, and visible in history"
+    explanation: "URLs appear in server logs, browser history, proxy logs, and referrer headers, making them unsafe for sensitive data."
+
+  - question: "What protocol should you use to protect data in transit?"
+    options:
+      - "HTTP"
+      - "FTP"
+      - "HTTPS (TLS)"
+      - "Telnet"
+    correct_answer: "HTTPS (TLS)"
+    explanation: "HTTPS uses TLS to encrypt data in transit, protecting it from eavesdropping and tampering."
+
+  - question: "Which encryption algorithm is recommended for sensitive data at rest?"
+    options:
+      - "ROT13"
+      - "Base64"
+      - "AES-256"
+      - "XOR cipher"
+    correct_answer: "AES-256"
+    explanation: "AES-256 is a strong, industry-standard encryption algorithm. ROT13 and XOR are not secure. Base64 is encoding, not encryption."
+
+  - question: "What should you do with credit card numbers before storing them?"
+    options:
+      - "Hash them with MD5"
+      - "Encrypt them with AES"
+      - "Store in plain text with access control"
+      - "Encode them with Base64"
+    correct_answer: "Encrypt them with AES"
+    explanation: "Credit card numbers should be encrypted (not hashed) so they can be decrypted when needed. Use strong encryption like AES-256."
+
+  - question: "What is PII?"
+    options:
+      - "Public Internet Information"
+      - "Personally Identifiable Information"
+      - "Protected Internal Infrastructure"
+      - "Private IP Interface"
+    correct_answer: "Personally Identifiable Information"
+    explanation: "PII is any data that can identify an individual (name, SSN, email, phone, address, etc.) and requires special protection."

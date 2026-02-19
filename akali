@@ -212,6 +212,23 @@ For more help: https://github.com/sevs/akali
     postmortem_parser.add_argument("incident_id", help="Incident ID")
     postmortem_parser.add_argument("--output", help="Output file path")
 
+    # Training commands
+    train_parser = subparsers.add_parser("train", help="Security training")
+    train_subparsers = train_parser.add_subparsers(dest="train_command")
+
+    train_subparsers.add_parser("list", help="List training modules")
+
+    train_start_parser = train_subparsers.add_parser("start", help="Start training module")
+    train_start_parser.add_argument("module_id", help="Module ID")
+    train_start_parser.add_argument("--agent", default="unknown", help="Agent ID")
+
+    train_progress_parser = train_subparsers.add_parser("progress", help="View training progress")
+    train_progress_parser.add_argument("--agent", default="unknown", help="Agent ID")
+
+    train_cert_parser = train_subparsers.add_parser("certificate", help="View certificates")
+    train_cert_parser.add_argument("agent", help="Agent ID")
+    train_cert_parser.add_argument("--module", help="Specific module ID")
+
     # Status command
     subparsers.add_parser("status", help="Show Akali status")
 
@@ -410,6 +427,18 @@ For more help: https://github.com/sevs/akali
 
         elif args.command == "post-mortem":
             cli.post_mortem(args.incident_id, output=args.output)
+
+        elif args.command == "train":
+            if args.train_command == "list":
+                cli.train_list()
+            elif args.train_command == "start":
+                cli.train_start(args.module_id, agent_id=args.agent)
+            elif args.train_command == "progress":
+                cli.train_progress(agent_id=args.agent)
+            elif args.train_command == "certificate":
+                cli.train_certificate(args.agent, module_id=args.module)
+            else:
+                train_parser.print_help()
 
         elif args.command == "status":
             cli.status()

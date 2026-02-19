@@ -1,0 +1,168 @@
+id: owasp_01_injection
+title: "OWASP #1: Injection Attacks"
+description: "Learn how SQL, NoSQL, OS, and LDAP injection attacks work and how to prevent them"
+difficulty: beginner
+estimated_time: "25 minutes"
+tags:
+  - owasp
+  - sql-injection
+  - security
+  - web-security
+
+lessons:
+  - title: "What is Injection?"
+    content:
+      - type: text
+        value: |
+          Injection flaws occur when untrusted data is sent to an interpreter as part of a command or query.
+          The attacker's hostile data can trick the interpreter into executing unintended commands or accessing
+          data without proper authorization.
+
+      - type: warning
+        value: "Injection is the #1 most critical web application security risk"
+
+      - type: text
+        value: |
+          Common injection types:
+          • SQL Injection (SQLi)
+          • NoSQL Injection
+          • OS Command Injection
+          • LDAP Injection
+          • XML Injection (XPath/XXE)
+
+    takeaways:
+      - "Injection happens when untrusted input reaches an interpreter"
+      - "Most common: SQL injection"
+      - "Can lead to data theft, data loss, or complete system compromise"
+
+  - title: "SQL Injection Example"
+    content:
+      - type: text
+        value: |
+          Let's see how SQL injection works with a vulnerable login form:
+
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE CODE - DO NOT USE
+          username = request.form['username']
+          password = request.form['password']
+
+          query = f"SELECT * FROM users WHERE username='{username}' AND password='{password}'"
+          user = db.execute(query)
+
+      - type: text
+        value: |
+          An attacker can input:
+          Username: admin' --
+          Password: anything
+
+          This produces:
+
+      - type: code
+        language: sql
+        value: |
+          SELECT * FROM users WHERE username='admin' -- ' AND password='anything'
+
+      - type: text
+        value: |
+          The -- comment makes the password check disappear, allowing login as admin without a password!
+
+      - type: warning
+        value: "Never concatenate user input directly into SQL queries"
+
+    takeaways:
+      - "SQL injection bypasses authentication by manipulating queries"
+      - "Attackers can comment out parts of queries using -- or #"
+      - "String concatenation is dangerous"
+
+  - title: "How to Prevent Injection"
+    content:
+      - type: text
+        value: |
+          The best defense against injection is to separate data from code:
+
+      - type: tip
+        value: "Use parameterized queries (prepared statements)"
+
+      - type: code
+        language: python
+        value: |
+          # SECURE CODE
+          username = request.form['username']
+          password = request.form['password']
+
+          query = "SELECT * FROM users WHERE username=? AND password=?"
+          user = db.execute(query, (username, password))
+
+      - type: text
+        value: |
+          With parameterized queries:
+          • The database treats input as DATA, not CODE
+          • Special characters are automatically escaped
+          • No SQL injection possible
+
+      - type: example
+        value: |
+          Even if attacker inputs:  admin' --
+          The database sees it as the literal string:  "admin' --"
+          Not as SQL syntax!
+
+      - type: text
+        value: |
+          Other prevention methods:
+          • Use ORMs (SQLAlchemy, Django ORM)
+          • Input validation (whitelist)
+          • Least privilege database accounts
+          • Escape special characters (last resort)
+
+    takeaways:
+      - "Always use parameterized queries"
+      - "ORMs provide built-in protection"
+      - "Never trust user input"
+
+quiz:
+  - question: "What is the primary cause of SQL injection vulnerabilities?"
+    options:
+      - "Using weak passwords"
+      - "Concatenating user input directly into SQL queries"
+      - "Not using HTTPS"
+      - "Weak encryption algorithms"
+    correct_answer: "Concatenating user input directly into SQL queries"
+    explanation: "SQL injection occurs when user input is concatenated directly into SQL queries without proper sanitization or parameterization."
+
+  - question: "Which of the following is the BEST way to prevent SQL injection?"
+    options:
+      - "Input validation only"
+      - "Escaping special characters"
+      - "Using parameterized queries (prepared statements)"
+      - "Using strong passwords"
+    correct_answer: "Using parameterized queries (prepared statements)"
+    explanation: "Parameterized queries (prepared statements) separate SQL code from data, making injection impossible."
+
+  - question: "An attacker enters ' OR '1'='1 in a username field. What might this do?"
+    options:
+      - "Nothing, it's invalid input"
+      - "Cause a syntax error"
+      - "Bypass authentication by making the WHERE clause always true"
+      - "Delete the database"
+    correct_answer: "Bypass authentication by making the WHERE clause always true"
+    explanation: "This classic SQL injection payload makes the WHERE clause always evaluate to true, potentially bypassing authentication."
+
+  - question: "Which of these is also a type of injection attack?"
+    options:
+      - "Cross-Site Scripting (XSS)"
+      - "OS Command Injection"
+      - "Buffer Overflow"
+      - "Man-in-the-Middle"
+    correct_answer: "OS Command Injection"
+    explanation: "OS Command Injection is another injection type where attackers inject shell commands. XSS is separate (though related). Buffer overflows and MitM are different attack types."
+
+  - question: "True or False: Using an ORM completely eliminates SQL injection risk."
+    options:
+      - "True - ORMs are 100% safe"
+      - "False - You can still introduce SQL injection with raw queries"
+      - "True - ORMs validate all input"
+      - "False - ORMs don't protect against SQL injection"
+    correct_answer: "False - You can still introduce SQL injection with raw queries"
+    explanation: "While ORMs provide good protection, you can still introduce SQL injection if you use raw SQL queries or improperly use ORM features."

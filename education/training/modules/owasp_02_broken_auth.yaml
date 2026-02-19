@@ -1,0 +1,160 @@
+id: owasp_02_broken_auth
+title: "OWASP #2: Broken Authentication"
+description: "Understand authentication vulnerabilities and how to build secure auth systems"
+difficulty: beginner
+estimated_time: "20 minutes"
+tags:
+  - owasp
+  - authentication
+  - passwords
+  - sessions
+
+lessons:
+  - title: "What is Broken Authentication?"
+    content:
+      - type: text
+        value: |
+          Broken authentication occurs when application functions related to authentication and session
+          management are implemented incorrectly, allowing attackers to compromise passwords, keys,
+          or session tokens.
+
+      - type: text
+        value: |
+          Common authentication vulnerabilities:
+          • Weak password requirements
+          • Credential stuffing attacks
+          • Session fixation
+          • Missing 2FA/MFA
+          • Predictable session IDs
+          • Passwords stored in plain text
+
+    takeaways:
+      - "Authentication is identity verification"
+      - "Weak auth lets attackers impersonate users"
+      - "Session management is critical"
+
+  - title: "Common Authentication Mistakes"
+    content:
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE - Passwords in plain text
+          user = User(
+              username="john",
+              password="mypassword123"  # ❌ Never store plain text!
+          )
+          db.save(user)
+
+      - type: warning
+        value: "Storing passwords in plain text means a database breach exposes all passwords"
+
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE - Weak session IDs
+          session_id = str(random.randint(1, 999999))  # ❌ Predictable!
+
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE - No rate limiting
+          # Attacker can brute force passwords
+          if user.password == input_password:
+              login_success()
+
+    takeaways:
+      - "Never store passwords in plain text"
+      - "Use cryptographically secure random for session IDs"
+      - "Implement rate limiting and account lockout"
+
+  - title: "Secure Authentication Practices"
+    content:
+      - type: tip
+        value: "Hash passwords with bcrypt, scrypt, or Argon2"
+
+      - type: code
+        language: python
+        value: |
+          # SECURE - Hash passwords with bcrypt
+          import bcrypt
+
+          # Hashing a password
+          password = b"mypassword123"
+          hashed = bcrypt.hashpw(password, bcrypt.gensalt())
+          # Store hashed, not plain text
+
+          # Verifying a password
+          if bcrypt.checkpw(password, hashed):
+              print("Correct password!")
+
+      - type: tip
+        value: "Use cryptographically secure random for sessions"
+
+      - type: code
+        language: python
+        value: |
+          import secrets
+
+          # Generate secure session token
+          session_token = secrets.token_urlsafe(32)
+
+      - type: text
+        value: |
+          Additional security measures:
+          • Enforce strong password policies
+          • Implement MFA/2FA
+          • Use rate limiting
+          • Implement account lockout after failed attempts
+          • Use HTTPS only
+          • Set secure session cookies (HttpOnly, Secure, SameSite)
+
+    takeaways:
+      - "Use bcrypt or Argon2 for password hashing"
+      - "Generate secure random session tokens"
+      - "Enable MFA whenever possible"
+
+quiz:
+  - question: "Why should passwords never be stored in plain text?"
+    options:
+      - "It's harder to compare passwords"
+      - "A database breach would expose all passwords"
+      - "Plain text takes more storage space"
+      - "It violates SQL standards"
+    correct_answer: "A database breach would expose all passwords"
+    explanation: "If passwords are stored in plain text, a single database breach gives attackers access to all user passwords."
+
+  - question: "Which algorithm is recommended for password hashing?"
+    options:
+      - "MD5"
+      - "SHA-1"
+      - "bcrypt"
+      - "Base64"
+    correct_answer: "bcrypt"
+    explanation: "bcrypt is designed for password hashing with adaptive cost. MD5 and SHA-1 are cryptographically broken. Base64 is encoding, not hashing."
+
+  - question: "What is credential stuffing?"
+    options:
+      - "Guessing random passwords"
+      - "Using leaked credentials from other sites"
+      - "Injecting SQL into login forms"
+      - "Overloading the authentication server"
+    correct_answer: "Using leaked credentials from other sites"
+    explanation: "Credential stuffing is when attackers use username/password pairs leaked from other breaches, betting users reuse passwords."
+
+  - question: "What makes a session ID secure?"
+    options:
+      - "It's a sequential number"
+      - "It's based on the username"
+      - "It's cryptographically random and unpredictable"
+      - "It's stored in localStorage"
+    correct_answer: "It's cryptographically random and unpredictable"
+    explanation: "Session IDs must be unpredictable to prevent session hijacking. They should be generated with cryptographic randomness."
+
+  - question: "What does the HttpOnly flag on cookies prevent?"
+    options:
+      - "Cookie transmission over HTTP"
+      - "JavaScript access to the cookie"
+      - "Cookie theft via SQL injection"
+      - "Cookie expiration"
+    correct_answer: "JavaScript access to the cookie"
+    explanation: "HttpOnly prevents JavaScript from accessing cookies, protecting against XSS-based session theft."

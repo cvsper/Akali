@@ -1,0 +1,169 @@
+id: owasp_05_broken_access
+title: "OWASP #5: Broken Access Control"
+description: "Understand authorization failures and how to implement proper access control"
+difficulty: intermediate
+estimated_time: "22 minutes"
+tags:
+  - owasp
+  - authorization
+  - access-control
+  - idor
+
+lessons:
+  - title: "What is Broken Access Control?"
+    content:
+      - type: text
+        value: |
+          Access control enforces policy that users cannot act outside of their intended permissions.
+          Broken access control means users can access data or perform actions they shouldn't be able to.
+
+      - type: text
+        value: |
+          Common access control failures:
+          • Insecure Direct Object References (IDOR)
+          • Privilege escalation (vertical and horizontal)
+          • Missing function-level access control
+          • CORS misconfigurations
+          • Force browsing to authenticated pages
+
+      - type: warning
+        value: "Access control failures are extremely common and often catastrophic"
+
+    takeaways:
+      - "Authentication = Who you are"
+      - "Authorization = What you can do"
+      - "Broken access control lets users access unauthorized resources"
+
+  - title: "Insecure Direct Object Reference (IDOR)"
+    content:
+      - type: text
+        value: |
+          IDOR occurs when an application exposes internal object references (like database IDs)
+          without proper authorization checks.
+
+      - type: code
+        language: python
+        value: |
+          # VULNERABLE - No authorization check
+          @app.route('/user/<user_id>/profile')
+          def get_profile(user_id):
+              # ❌ Any user can access any profile!
+              user = db.get_user(user_id)
+              return render_template('profile.html', user=user)
+
+      - type: text
+        value: |
+          Attack scenario:
+          1. Logged in as user ID 123
+          2. Access /user/124/profile
+          3. See another user's private data!
+
+      - type: code
+        language: python
+        value: |
+          # SECURE - Check authorization
+          @app.route('/user/<user_id>/profile')
+          @login_required
+          def get_profile(user_id):
+              # ✅ Verify user can access this profile
+              if current_user.id != user_id and not current_user.is_admin:
+                  abort(403)  # Forbidden
+
+              user = db.get_user(user_id)
+              return render_template('profile.html', user=user)
+
+    takeaways:
+      - "Never assume users will only access their own resources"
+      - "Always verify authorization, not just authentication"
+      - "Check permissions on every request"
+
+  - title: "Prevention Strategies"
+    content:
+      - type: tip
+        value: "Implement authorization checks on every sensitive operation"
+
+      - type: code
+        language: python
+        value: |
+          # Authorization helper
+          def can_access_resource(user, resource):
+              """Check if user has permission to access resource"""
+              # Check ownership
+              if resource.owner_id == user.id:
+                  return True
+
+              # Check role-based permissions
+              if user.is_admin:
+                  return True
+
+              # Check group membership
+              if user.group_id in resource.allowed_groups:
+                  return True
+
+              return False
+
+          # Use in routes
+          if not can_access_resource(current_user, document):
+              abort(403)
+
+      - type: text
+        value: |
+          Best practices:
+          • Deny by default
+          • Use authorization frameworks (Flask-Security, Django permissions)
+          • Never rely on client-side access control
+          • Log access control failures
+          • Use indirect references (UUIDs instead of sequential IDs)
+          • Implement rate limiting on sensitive endpoints
+          • Re-verify permissions for sensitive operations
+
+    takeaways:
+      - "Check authorization on every request"
+      - "Deny by default"
+      - "Use framework-provided authorization mechanisms"
+
+quiz:
+  - question: "What is the difference between authentication and authorization?"
+    options:
+      - "They are the same thing"
+      - "Authentication is who you are, authorization is what you can do"
+      - "Authorization is who you are, authentication is what you can do"
+      - "Authentication uses passwords, authorization uses tokens"
+    correct_answer: "Authentication is who you are, authorization is what you can do"
+    explanation: "Authentication verifies identity. Authorization determines what an authenticated user is allowed to do."
+
+  - question: "What is IDOR?"
+    options:
+      - "Insecure Database Object Reference"
+      - "Insecure Direct Object Reference"
+      - "Internal Data Object Retrieval"
+      - "Invalid Data Output Response"
+    correct_answer: "Insecure Direct Object Reference"
+    explanation: "IDOR (Insecure Direct Object Reference) is when applications expose internal object IDs without proper authorization checks."
+
+  - question: "How can you prevent IDOR vulnerabilities?"
+    options:
+      - "Use HTTPS"
+      - "Check authorization on every resource access"
+      - "Use strong passwords"
+      - "Enable CORS"
+    correct_answer: "Check authorization on every resource access"
+    explanation: "The key to preventing IDOR is checking that the current user has permission to access the requested resource."
+
+  - question: "What should be the default access control policy?"
+    options:
+      - "Allow by default, deny specific actions"
+      - "Deny by default, allow specific actions"
+      - "Allow everything for logged-in users"
+      - "No default policy needed"
+    correct_answer: "Deny by default, allow specific actions"
+    explanation: "Deny by default (fail-secure) is the security best practice. Only grant access when explicitly allowed."
+
+  - question: "Which is more secure for resource IDs?"
+    options:
+      - "Sequential integers (1, 2, 3...)"
+      - "Random UUIDs"
+      - "Timestamps"
+      - "Username-based IDs"
+    correct_answer: "Random UUIDs"
+    explanation: "UUIDs are unpredictable, making enumeration attacks harder. However, you still need proper authorization checks!"

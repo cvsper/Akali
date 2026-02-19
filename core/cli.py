@@ -693,3 +693,133 @@ class AkaliCLI:
         report_path = self.post_mortem_generator.generate_report(incident_id, output)
         print(f"\n✅ Post-mortem report generated:")
         print(f"   {report_path}")
+
+    # Phase 6: Training
+
+    def train_list(self):
+        """List available training modules."""
+        from education.training.training_engine import TrainingEngine
+
+        engine = TrainingEngine()
+        modules = engine.list_modules()
+
+        print("\n🥷 Akali Security Training Modules:\n")
+        for i, module in enumerate(modules, 1):
+            difficulty_emoji = {'beginner': '🟢', 'intermediate': '🟡', 'advanced': '🔴'}.get(module['difficulty'], '⚪')
+            print(f"{i}. {module['title']}")
+            print(f"   {module['description']}")
+            print(f"   {difficulty_emoji} {module['difficulty'].title()} | ⏱️  {module['estimated_time']}")
+            if module.get('tags'):
+                print(f"   🏷️  {', '.join(module['tags'])}")
+            print()
+
+    def train_start(self, module_id: str, agent_id: str = "unknown"):
+        """Start training module."""
+        from education.training.training_engine import TrainingEngine
+        from education.training.progress_tracker import ProgressTracker
+        from education.training.certificate_generator import CertificateGenerator
+
+        engine = TrainingEngine()
+        module = engine.get_module(module_id)
+
+        if not module:
+            print(f"❌ Module not found: {module_id}")
+            print("\nAvailable modules:")
+            for m in engine.list_modules():
+                print(f"  • {m['id']}")
+            return
+
+        # Run training
+        results = engine.start_training(module_id, agent_id)
+
+        if 'error' in results:
+            print(f"\n❌ Error: {results['error']}")
+            return
+
+        # Save progress
+        tracker = ProgressTracker()
+        session_id = tracker.record_session(results)
+
+        print(f"\n📊 Session recorded: #{session_id}")
+
+        # Generate certificate if passed
+        if results['passed']:
+            try:
+                generator = CertificateGenerator()
+                cert_path = generator.generate_certificate(
+                    agent_id=results['agent_id'],
+                    module_title=module.title,
+                    module_id=results['module_id'],
+                    score=results['score'],
+                    total_questions=results['total_questions'],
+                    percentage=results['percentage']
+                )
+                tracker.mark_certificate_issued(
+                    results['agent_id'],
+                    results['module_id'],
+                    cert_path
+                )
+                print(f"\n🏆 Certificate generated: {cert_path}")
+            except ImportError:
+                print("\n⚠️  Certificate generation requires reportlab: pip install reportlab")
+
+    def train_progress(self, agent_id: str = "unknown"):
+        """View training progress for an agent."""
+        from education.training.progress_tracker import ProgressTracker
+
+        tracker = ProgressTracker()
+        progress = tracker.get_agent_progress(agent_id)
+
+        if not progress['modules']:
+            print(f"\n📊 No training history for {agent_id}")
+            return
+
+        stats = progress['stats']
+
+        print(f"\n📊 Training Progress for {agent_id}:\n")
+        print(f"   Modules Started: {stats['total_modules']}")
+        print(f"   Modules Completed: {stats['completed_modules']} ({stats['completion_rate']:.1f}%)")
+        print(f"   Total Attempts: {stats['total_attempts']}")
+        print(f"   Average Score: {stats['average_score']:.1f}%")
+        print(f"   Certificates Earned: {stats['certificates_earned']}")
+
+        if progress['modules']:
+            print(f"\n📚 Module Progress:\n")
+            for module in progress['modules']:
+                status = "✅" if module['completed'] else "📝"
+                print(f"{status} {module['module_id']}")
+                print(f"   Attempts: {module['attempts']}")
+                print(f"   Best Score: {module['best_score']} ({module['best_percentage']:.1f}%)")
+                print()
+
+    def train_certificate(self, agent_id: str, module_id: Optional[str] = None):
+        """View or regenerate certificates."""
+        from education.training.progress_tracker import ProgressTracker
+
+        tracker = ProgressTracker()
+
+        if module_id:
+            # Check if certificate exists
+            certs = tracker.get_certificates(agent_id)
+            cert = next((c for c in certs if c['module_id'] == module_id), None)
+
+            if cert:
+                print(f"\n🏆 Certificate for {module_id}:")
+                print(f"   Issued: {cert['issued_at']}")
+                print(f"   Path: {cert['certificate_path']}")
+            else:
+                print(f"\n❌ No certificate found for {agent_id} / {module_id}")
+        else:
+            # List all certificates
+            certs = tracker.get_certificates(agent_id)
+
+            if not certs:
+                print(f"\n🏆 No certificates earned yet for {agent_id}")
+                return
+
+            print(f"\n🏆 Certificates for {agent_id}:\n")
+            for cert in certs:
+                print(f"   {cert['module_id']}")
+                print(f"   Issued: {cert['issued_at']}")
+                print(f"   Path: {cert['certificate_path']}")
+                print()

@@ -1,0 +1,196 @@
+id: owasp_09_vulnerable_components
+title: "OWASP #9: Using Components with Known Vulnerabilities"
+description: "Learn about dependency management and keeping components secure"
+difficulty: beginner
+estimated_time: "18 minutes"
+tags:
+  - owasp
+  - dependencies
+  - cve
+  - supply-chain
+
+lessons:
+  - title: "What Are Vulnerable Components?"
+    content:
+      - type: text
+        value: |
+          Modern applications rely heavily on libraries, frameworks, and other software components.
+          When these components have known vulnerabilities, they create security risks.
+
+      - type: text
+        value: |
+          Types of components:
+          • Libraries (npm packages, pip packages, gems)
+          • Frameworks (React, Flask, Rails)
+          • Operating system packages
+          • Container base images
+          • Third-party APIs and services
+
+      - type: warning
+        value: "A single vulnerable component can compromise your entire application"
+
+      - type: text
+        value: |
+          Famous examples:
+          • Equifax breach (Apache Struts vulnerability)
+          • Heartbleed (OpenSSL)
+          • Log4Shell (Log4j)
+          • Python urllib3 HTTPS validation bypass
+
+    takeaways:
+      - "All applications use third-party components"
+      - "Components have vulnerabilities discovered over time"
+      - "Supply chain attacks are increasing"
+
+  - title: "Identifying Vulnerable Dependencies"
+    content:
+      - type: tip
+        value: "Use automated tools to scan dependencies"
+
+      - type: code
+        language: bash
+        value: |
+          # Python - Check dependencies with safety
+          pip install safety
+          safety check
+
+          # Node.js - Check dependencies with npm audit
+          npm audit
+
+          # Check for outdated packages
+          pip list --outdated
+          npm outdated
+
+      - type: code
+        language: bash
+        value: |
+          # Using Snyk (supports many languages)
+          npm install -g snyk
+          snyk test
+
+      - type: text
+        value: |
+          What to check:
+          • Direct dependencies (in requirements.txt, package.json)
+          • Transitive dependencies (dependencies of dependencies)
+          • CVE databases (cve.mitre.org, nvd.nist.gov)
+          • Security advisories (GitHub, npm, PyPI)
+
+      - type: example
+        value: |
+          Example npm audit output:
+          ┌───────────────┬──────────────────────────────────────────────┐
+          │ High          │ Regular Expression Denial of Service         │
+          ├───────────────┼──────────────────────────────────────────────┤
+          │ Package       │ minimatch                                    │
+          ├───────────────┼──────────────────────────────────────────────┤
+          │ Patched in    │ >=3.0.2                                      │
+          └───────────────┴──────────────────────────────────────────────┘
+
+    takeaways:
+      - "Automated tools find known vulnerabilities"
+      - "Check both direct and transitive dependencies"
+      - "Scan regularly, not just once"
+
+  - title: "Securing Your Dependencies"
+    content:
+      - type: text
+        value: |
+          Dependency management best practices:
+
+      - type: tip
+        value: "Keep dependencies up to date"
+
+      - type: code
+        language: bash
+        value: |
+          # Update Python packages
+          pip install --upgrade package-name
+
+          # Update all npm packages
+          npm update
+
+          # Update specific package
+          npm update package-name
+
+      - type: tip
+        value: "Pin versions in production"
+
+      - type: code
+        language: text
+        value: |
+          # requirements.txt - Pin exact versions
+          flask==2.3.0
+          requests==2.28.2
+
+          # package.json - Use exact versions
+          "dependencies": {
+            "express": "4.18.2"
+          }
+
+      - type: text
+        value: |
+          Security practices:
+          ✅ Maintain inventory of all components
+          ✅ Monitor for security advisories
+          ✅ Update regularly (security patches)
+          ✅ Remove unused dependencies
+          ✅ Use dependency lock files (package-lock.json, Pipfile.lock)
+          ✅ Automate scanning in CI/CD
+          ✅ Review dependencies before adding
+          ✅ Use private package registries
+          ✅ Implement Software Bill of Materials (SBOM)
+
+      - type: warning
+        value: "Don't blindly update - test thoroughly after updates"
+
+    takeaways:
+      - "Keep dependencies updated"
+      - "Pin versions for reproducibility"
+      - "Automate vulnerability scanning"
+
+quiz:
+  - question: "What command checks Node.js dependencies for vulnerabilities?"
+    options:
+      - "npm check"
+      - "npm audit"
+      - "npm scan"
+      - "npm security"
+    correct_answer: "npm audit"
+    explanation: "npm audit analyzes dependencies for known security vulnerabilities and suggests fixes."
+
+  - question: "What is a transitive dependency?"
+    options:
+      - "A dependency you directly install"
+      - "A dependency of your dependency"
+      - "A deprecated package"
+      - "A development-only dependency"
+    correct_answer: "A dependency of your dependency"
+    explanation: "Transitive (indirect) dependencies are packages that your direct dependencies depend on. They can also have vulnerabilities."
+
+  - question: "What was the Equifax breach caused by?"
+    options:
+      - "SQL Injection"
+      - "Unpatched Apache Struts vulnerability"
+      - "Weak passwords"
+      - "Missing firewall"
+    correct_answer: "Unpatched Apache Struts vulnerability"
+    explanation: "The 2017 Equifax breach exposed 147 million records due to an unpatched Apache Struts vulnerability (CVE-2017-5638)."
+
+  - question: "Why should you pin dependency versions in production?"
+    options:
+      - "To save disk space"
+      - "To ensure reproducible builds"
+      - "To make updates faster"
+      - "To reduce build time"
+    correct_answer: "To ensure reproducible builds"
+    explanation: "Pinning versions ensures the same code is deployed every time, preventing unexpected changes from automatic updates."
+
+  - question: "How often should you scan dependencies for vulnerabilities?"
+    options:
+      - "Once when you start the project"
+      - "Only when deploying"
+      - "Regularly (weekly/daily) and in CI/CD"
+      - "Only when you add new dependencies"
+    correct_answer: "Regularly (weekly/daily) and in CI/CD"
+    explanation: "New vulnerabilities are discovered constantly. Regular automated scanning catches them quickly."
