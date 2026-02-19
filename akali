@@ -30,6 +30,18 @@ Offensive Examples (requires authorization):
   akali attack https://example.com --full     # Full offensive scan
   akali exploit CVE-2021-44228                # CVE lookup
 
+Vault Examples:
+  akali vault health --mock                   # Check Vault status (mock mode)
+  akali vault get app/database --mock         # Get secret from Vault
+  akali vault set app/api '{"key":"val"}'     # Store secret in Vault
+  akali vault scan /path/to/project           # Scan for hardcoded secrets
+  akali vault rotate db-password --mock       # Rotate a secret
+
+Training Examples:
+  akali train list                            # List training modules
+  akali train start owasp-01-injection        # Start OWASP training
+  akali train progress --agent dommo          # View progress
+
 Status:
   akali status                    # Show Akali status
 
@@ -228,6 +240,49 @@ For more help: https://github.com/sevs/akali
     train_cert_parser = train_subparsers.add_parser("certificate", help="View certificates")
     train_cert_parser.add_argument("agent", help="Agent ID")
     train_cert_parser.add_argument("--module", help="Specific module ID")
+
+    # Vault commands (Phase 6)
+    vault_parser = subparsers.add_parser("vault", help="HashiCorp Vault operations")
+    vault_subparsers = vault_parser.add_subparsers(dest="vault_command")
+
+    vault_get_parser = vault_subparsers.add_parser("get", help="Get secret from Vault")
+    vault_get_parser.add_argument("path", help="Secret path")
+    vault_get_parser.add_argument("--version", type=int, help="Secret version")
+    vault_get_parser.add_argument("--mock", action="store_true", help="Use mock Vault client")
+
+    vault_set_parser = vault_subparsers.add_parser("set", help="Set secret in Vault")
+    vault_set_parser.add_argument("path", help="Secret path")
+    vault_set_parser.add_argument("data", help="Secret data (JSON)")
+    vault_set_parser.add_argument("--mock", action="store_true", help="Use mock Vault client")
+
+    vault_list_parser = vault_subparsers.add_parser("list", help="List secrets in Vault")
+    vault_list_parser.add_argument("path", nargs="?", default="", help="Secret path prefix")
+    vault_list_parser.add_argument("--mock", action="store_true", help="Use mock Vault client")
+
+    vault_delete_parser = vault_subparsers.add_parser("delete", help="Delete secret from Vault")
+    vault_delete_parser.add_argument("path", help="Secret path")
+    vault_delete_parser.add_argument("--mock", action="store_true", help="Use mock Vault client")
+
+    vault_rotate_parser = vault_subparsers.add_parser("rotate", help="Rotate a secret")
+    vault_rotate_parser.add_argument("policy_id", help="Rotation policy ID")
+    vault_rotate_parser.add_argument("--force", action="store_true", help="Force rotation")
+    vault_rotate_parser.add_argument("--mock", action="store_true", help="Use mock Vault client")
+
+    vault_scan_parser = vault_subparsers.add_parser("scan", help="Scan for hardcoded secrets")
+    vault_scan_parser.add_argument("target", help="File or directory to scan")
+    vault_scan_parser.add_argument("--output", help="Save report to file (JSON)")
+
+    vault_health_parser = vault_subparsers.add_parser("health", help="Check Vault health")
+    vault_health_parser.add_argument("--mock", action="store_true", help="Use mock Vault client")
+
+    vault_policies_parser = vault_subparsers.add_parser("policies", help="Manage rotation policies")
+    vault_policies_subparsers = vault_policies_parser.add_subparsers(dest="vault_policies_command")
+
+    vault_policies_list_parser = vault_policies_subparsers.add_parser("list", help="List rotation policies")
+    vault_policies_list_parser.add_argument("--mock", action="store_true", help="Use mock Vault client")
+
+    vault_policies_check_parser = vault_policies_subparsers.add_parser("check", help="Check for due rotations")
+    vault_policies_check_parser.add_argument("--mock", action="store_true", help="Use mock Vault client")
 
     # Status command
     subparsers.add_parser("status", help="Show Akali status")
@@ -439,6 +494,39 @@ For more help: https://github.com/sevs/akali
                 cli.train_certificate(args.agent, module_id=args.module)
             else:
                 train_parser.print_help()
+
+        elif args.command == "vault":
+            if args.vault_command == "get":
+                cli.vault_get(args.path, version=args.version, mock=args.mock)
+
+            elif args.vault_command == "set":
+                cli.vault_set(args.path, args.data, mock=args.mock)
+
+            elif args.vault_command == "list":
+                cli.vault_list(args.path, mock=args.mock)
+
+            elif args.vault_command == "delete":
+                cli.vault_delete(args.path, mock=args.mock)
+
+            elif args.vault_command == "rotate":
+                cli.vault_rotate(args.policy_id, force=args.force, mock=args.mock)
+
+            elif args.vault_command == "scan":
+                cli.vault_scan(args.target, output=args.output)
+
+            elif args.vault_command == "health":
+                cli.vault_health(mock=args.mock)
+
+            elif args.vault_command == "policies":
+                if args.vault_policies_command == "list":
+                    cli.vault_policies_list(mock=args.mock)
+                elif args.vault_policies_command == "check":
+                    cli.vault_policies_check(mock=args.mock)
+                else:
+                    vault_policies_parser.print_help()
+
+            else:
+                vault_parser.print_help()
 
         elif args.command == "status":
             cli.status()

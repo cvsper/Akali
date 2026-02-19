@@ -823,3 +823,221 @@ class AkaliCLI:
                 print(f"   Issued: {cert['issued_at']}")
                 print(f"   Path: {cert['certificate_path']}")
                 print()
+
+    # Phase 6: Vault
+
+    def vault_get(self, path: str, version: Optional[int] = None, mock: bool = False):
+        """Get a secret from Vault."""
+        from education.vault.vault_client import get_vault_client
+
+        try:
+            vault = get_vault_client(mock=mock)
+            secret = vault.get_secret(path, version=version)
+
+            if secret:
+                print(f"\n🔐 Secret at '{path}':")
+                import json
+                print(json.dumps(secret, indent=2))
+            else:
+                print(f"❌ Secret not found: {path}")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def vault_set(self, path: str, data: str, mock: bool = False):
+        """Set a secret in Vault."""
+        from education.vault.vault_client import get_vault_client
+        import json
+
+        try:
+            vault = get_vault_client(mock=mock)
+            secret_data = json.loads(data)
+
+            if vault.set_secret(path, secret_data):
+                print(f"✅ Secret stored at '{path}'")
+            else:
+                print(f"❌ Failed to store secret")
+        except json.JSONDecodeError:
+            print("❌ Invalid JSON data. Use format: '{\"key\": \"value\"}'")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def vault_list(self, path: str = "", mock: bool = False):
+        """List secrets in Vault."""
+        from education.vault.vault_client import get_vault_client
+
+        try:
+            vault = get_vault_client(mock=mock)
+            secrets = vault.list_secrets(path)
+
+            if secrets:
+                print(f"\n📋 Secrets at '{path or '/'}':")
+                for secret in secrets:
+                    print(f"   • {secret}")
+            else:
+                print(f"No secrets found at '{path or '/'}'")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def vault_delete(self, path: str, mock: bool = False):
+        """Delete a secret from Vault."""
+        from education.vault.vault_client import get_vault_client
+
+        try:
+            vault = get_vault_client(mock=mock)
+
+            if vault.delete_secret(path):
+                print(f"✅ Secret deleted: {path}")
+            else:
+                print(f"❌ Failed to delete secret")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def vault_rotate(self, policy_id: str, force: bool = False, mock: bool = False):
+        """Rotate a secret using a rotation policy."""
+        from education.vault.vault_client import get_vault_client
+        from education.vault.rotation_policies import RotationManager, RotationStatus
+
+        try:
+            vault = get_vault_client(mock=mock)
+            manager = RotationManager(vault)
+
+            log = manager.rotate_secret(policy_id, force=force)
+
+            if log.status == RotationStatus.SUCCESS.value:
+                print(f"✅ Secret rotated: {log.secret_path}")
+                print(f"   Old version: {log.old_version}")
+                print(f"   New version: {log.new_version}")
+            elif log.status == RotationStatus.SKIPPED.value:
+                print(f"⏭️  Rotation skipped: {log.error_message}")
+            else:
+                print(f"❌ Rotation failed: {log.error_message}")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def vault_scan(self, target: str, output: Optional[str] = None):
+        """Scan for hardcoded secrets in code."""
+        from education.vault.secret_scanner import SecretScanner
+
+        scanner = SecretScanner()
+
+        print(f"🔍 Scanning {target} for hardcoded secrets...")
+        findings = scanner.scan(target)
+
+        report = scanner.generate_report(findings)
+
+        # Display summary
+        print(f"\n🥷 Secret Scan Results\n")
+        print(f"Total findings: {report['total_findings']}")
+
+        if report['total_findings'] > 0:
+            print(f"\nBy confidence:")
+            for confidence in ["high", "medium", "low"]:
+                count = report['by_confidence'].get(confidence, 0)
+                if count > 0:
+                    emoji = {"high": "🔴", "medium": "🟡", "low": "🔵"}[confidence]
+                    print(f"  {emoji} {confidence}: {count}")
+
+            print(f"\n📋 Top Secret Types:")
+            for secret_type, count in sorted(report['by_type'].items(), key=lambda x: -x[1])[:5]:
+                print(f"  • {secret_type}: {count}")
+
+            # Show high-confidence findings
+            high_conf = [f for f in findings if f.confidence == "high"]
+            if high_conf:
+                print(f"\n🔴 High Confidence Findings ({len(high_conf)}):\n")
+                for finding in high_conf[:10]:
+                    print(f"• {finding.secret_type}")
+                    print(f"  {finding.file_path}:{finding.line_number}")
+                    print(f"  Match: {finding.matched_text[:60]}...")
+                    print()
+
+                if len(high_conf) > 10:
+                    print(f"... and {len(high_conf) - 10} more high-confidence findings")
+
+        else:
+            print("\n✅ No secrets found!")
+
+        # Save report if output specified
+        if output:
+            import json
+            with open(output, 'w') as f:
+                json.dump(report, f, indent=2)
+            print(f"\n📄 Full report saved to: {output}")
+
+    def vault_health(self, mock: bool = False):
+        """Check Vault server health."""
+        from education.vault.vault_client import get_vault_client
+
+        try:
+            vault = get_vault_client(mock=mock)
+            health = vault.health_check()
+
+            print(f"\n🥷 Vault Health Check:")
+            print(f"   URL: {vault.url}")
+            print(f"   Healthy: {'✅' if health['healthy'] else '❌'}")
+            print(f"   Initialized: {health['initialized']}")
+            print(f"   Sealed: {health['sealed']}")
+            if health.get("version"):
+                print(f"   Version: {health['version']}")
+            if health.get("error"):
+                print(f"   Error: {health['error']}")
+
+            if mock:
+                print(f"\n⚠️  Using mock Vault client (no real server)")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def vault_policies_list(self, mock: bool = False):
+        """List rotation policies."""
+        from education.vault.vault_client import get_vault_client
+        from education.vault.rotation_policies import RotationManager
+
+        try:
+            vault = get_vault_client(mock=mock)
+            manager = RotationManager(vault)
+
+            policies = manager.list_policies()
+
+            if not policies:
+                print("No rotation policies configured")
+                return
+
+            print(f"\n🔐 Rotation Policies ({len(policies)}):\n")
+            for policy in policies:
+                status = "✅" if policy.enabled else "❌"
+                print(f"{status} {policy.policy_id}")
+                print(f"   Secret: {policy.secret_path}")
+                print(f"   Type: {policy.rotation_type}")
+                if policy.rotation_interval_days:
+                    print(f"   Interval: {policy.rotation_interval_days} days")
+                if policy.last_rotated:
+                    print(f"   Last rotated: {policy.last_rotated}")
+                if policy.next_rotation:
+                    print(f"   Next rotation: {policy.next_rotation}")
+                print()
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def vault_policies_check(self, mock: bool = False):
+        """Check for due rotations."""
+        from education.vault.vault_client import get_vault_client
+        from education.vault.rotation_policies import RotationManager
+
+        try:
+            vault = get_vault_client(mock=mock)
+            manager = RotationManager(vault)
+
+            due = manager.check_due_rotations()
+
+            if not due:
+                print("✅ No rotations due")
+                return
+
+            print(f"\n⚠️  {len(due)} rotation(s) due:\n")
+            for policy in due:
+                print(f"• {policy.policy_id}")
+                print(f"  Secret: {policy.secret_path}")
+                print(f"  Next rotation: {policy.next_rotation}")
+                print()
+        except Exception as e:
+            print(f"❌ Error: {e}")

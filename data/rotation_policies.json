@@ -1,0 +1,24 @@
+{
+  "test-policy": {
+    "policy_id": "test-policy",
+    "secret_path": "app/test",
+    "rotation_type": "time_based",
+    "rotation_interval_days": 7,
+    "rotation_handler": null,
+    "enabled": true,
+    "last_rotated": null,
+    "next_rotation": "2026-02-26T22:11:16.115477",
+    "metadata": {}
+  },
+  "test-rotation": {
+    "policy_id": "test-rotation",
+    "secret_path": "test/api",
+    "rotation_type": "time_based",
+    "rotation_interval_days": 30,
+    "rotation_handler": null,
+    "enabled": true,
+    "last_rotated": null,
+    "next_rotation": "2026-03-21T22:11:25.063436",
+    "metadata": {}
+  }
+}
