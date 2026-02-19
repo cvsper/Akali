@@ -9,11 +9,12 @@ from pathlib import Path
 sys.path.append(str(Path.home() / "akali" / "core"))
 
 from cli import AkaliCLI
+from ascii_art import AKALI_BANNER
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Akali - The Security Sentinel",
+        description=AKALI_BANNER + "\n",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Defensive Examples:

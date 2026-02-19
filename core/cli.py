@@ -3,6 +3,11 @@
 import sys
 from pathlib import Path
 from typing import List, Optional
+from ascii_art import (
+    AKALI_COMPACT, TRAINING_BANNER, VAULT_BANNER,
+    DLP_BANNER, HUNT_BANNER, INCIDENT_BANNER,
+    print_banner, Colors
+)
 
 # Add project root and scanners to path
 sys.path.insert(0, str(Path.home() / "akali"))
@@ -283,7 +288,8 @@ class AkaliCLI:
 
     def status(self):
         """Show Akali status and tool availability."""
-        print("\n🥷 Akali Status\n")
+        print_banner(AKALI_COMPACT, Colors.OKCYAN)
+        print(f"{Colors.BOLD}Status Dashboard{Colors.ENDC}\n")
 
         print("Defensive Scanners:")
         for name, scanner in self.scanners.items():
@@ -558,13 +564,15 @@ class AkaliCLI:
 
     def incident_list(self, status: Optional[str] = None, severity: Optional[str] = None):
         """List incidents."""
+        print_banner(INCIDENT_BANNER, Colors.FAIL)
+
         incidents = self.incident_tracker.list_incidents(status=status, severity=severity)
 
         if not incidents:
             print("No incidents found")
             return
 
-        print(f"\n📋 Found {len(incidents)} incidents:\n")
+        print(f"{Colors.BOLD}Found {len(incidents)} incidents{Colors.ENDC}\n")
         for inc in incidents:
             severity_emoji = {'critical': '🔴', 'high': '🟠', 'medium': '🟡', 'low': '🟢'}.get(inc['severity'], '⚪')
             status_emoji = {'new': '🆕', 'active': '⚡', 'contained': '🛡️', 'resolved': '✅', 'closed': '🔒'}.get(inc['status'], '•')
@@ -703,7 +711,8 @@ class AkaliCLI:
         engine = TrainingEngine()
         modules = engine.list_modules()
 
-        print("\n🥷 Akali Security Training Modules:\n")
+        print_banner(TRAINING_BANNER, Colors.OKGREEN)
+        print(f"{Colors.BOLD}Available Training Modules{Colors.ENDC}\n")
         for i, module in enumerate(modules, 1):
             difficulty_emoji = {'beginner': '🟢', 'intermediate': '🟡', 'advanced': '🔴'}.get(module['difficulty'], '⚪')
             print(f"{i}. {module['title']}")
@@ -1160,11 +1169,13 @@ class AkaliCLI:
         """Check Vault server health."""
         from education.vault.vault_client import get_vault_client
 
+        print_banner(VAULT_BANNER, Colors.OKCYAN)
+
         try:
             vault = get_vault_client(mock=mock)
             health = vault.health_check()
 
-            print(f"\n🥷 Vault Health Check:")
+            print(f"{Colors.BOLD}Health Check{Colors.ENDC}:")
             print(f"   URL: {vault.url}")
             print(f"   Healthy: {'✅' if health['healthy'] else '❌'}")
             print(f"   Initialized: {health['initialized']}")
@@ -1239,6 +1250,8 @@ class AkaliCLI:
     def dlp_scan(self, target: str, scan_type: str = "file"):
         """Scan target for PII violations."""
         from education.dlp.content_inspector import ContentInspector
+
+        print_banner(DLP_BANNER, Colors.WARNING)
 
         inspector = ContentInspector()
 
@@ -1442,6 +1455,8 @@ class AkaliCLI:
         """Analyze logs for threats."""
         from intelligence.hunting.hunt_cli import HuntCLI
         import json
+
+        print_banner(HUNT_BANNER, Colors.FAIL)
 
         cli = HuntCLI()
         findings = cli.analyze_logs(log_file, analysis_type)
