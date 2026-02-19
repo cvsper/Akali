@@ -1,0 +1,27 @@
+{
+  "metadata": {
+    "target": "test-target",
+    "scan_type": "test-scan",
+    "generated": "2026-02-19T15:19:26.140592",
+    "tool": "Akali - The Security Sentinel",
+    "version": "2.0"
+  },
+  "summary": {
+    "total_findings": 1,
+    "by_severity": {
+      "high": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "TEST-001",
+      "timestamp": "2026-02-19T15:00:00",
+      "severity": "high",
+      "type": "test",
+      "title": "Test Finding",
+      "description": "This is a test finding",
+      "status": "open",
+      "scanner": "test"
+    }
+  ]
+}

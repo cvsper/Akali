@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akali Security Report - test-application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 8px 8px 0 0;
+        }
+        .header h1 {
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        .header .meta {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px 40px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .summary-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .summary-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .summary-card .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #666;
+            letter-spacing: 0.5px;
+        }
+        .critical { color: #d32f2f; background: #ffebee; }
+        .high { color: #f57c00; background: #fff3e0; }
+        .medium { color: #fbc02d; background: #fffde7; }
+        .low { color: #1976d2; background: #e3f2fd; }
+        .info { color: #616161; background: #f5f5f5; }
+        .content {
+            padding: 40px;
+        }
+        .severity-section {
+            margin-bottom: 40px;
+        }
+        .severity-section h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .finding {
+            background: #f8f9fa;
+            border-left: 4px solid #ccc;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .finding.critical { border-left-color: #d32f2f; }
+        .finding.high { border-left-color: #f57c00; }
+        .finding.medium { border-left-color: #fbc02d; }
+        .finding.low { border-left-color: #1976d2; }
+        .finding.info { border-left-color: #616161; }
+        .finding h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .finding .meta {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .finding .meta span {
+            display: inline-block;
+            margin-right: 15px;
+        }
+        .finding .description {
+            margin-bottom: 15px;
+            color: #555;
+        }
+        .finding .fix {
+            background: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 3px solid #4caf50;
+            margin-top: 15px;
+        }
+        .finding .fix strong {
+            color: #4caf50;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🥷 Akali Security Report</h1>
+            <div class="meta">
+                <div><strong>Target:</strong> test-application</div>
+                <div><strong>Scan Type:</strong> comprehensive</div>
+                <div><strong>Generated:</strong> 2026-02-19 15:19:05</div>
+            </div>
+        </div>
+
+        <div class="summary">
+            <div class="summary-card critical">
+                <div class="number">1</div>
+                <div class="label">Critical</div>
+            </div>
+            <div class="summary-card high">
+                <div class="number">1</div>
+                <div class="label">High</div>
+            </div>
+            <div class="summary-card medium">
+                <div class="number">1</div>
+                <div class="label">Medium</div>
+            </div>
+            <div class="summary-card low">
+                <div class="number">1</div>
+                <div class="label">Low</div>
+            </div>
+            <div class="summary-card info">
+                <div class="number">1</div>
+                <div class="label">Info</div>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <div class="severity-section">
+                <h2 class="critical">CRITICAL Severity (1)</h2>
+
+                <div class="finding critical">
+                    <h3>Hardcoded API Key in config.py</h3>
+                    <div class="meta">
+                        <span><strong>ID:</strong> AKALI-001</span>
+                        <span><strong>Type:</strong> hardcoded_secret</span>
+                        <span><strong>CVSS:</strong> 9.5</span>
+                        <span><strong>CWE:</strong> CWE-798</span>
+                        <span><strong>OWASP:</strong> A02:2021 - Cryptographic Failures</span>
+                        <span><strong>Location:</strong> /app/config.py:42</span>
+                    </div>
+                    <div class="description">An API key was found hardcoded in the configuration file. This poses a significant security risk.</div>
+                    <div class="fix">
+                        <strong>🔧 Recommended Fix:</strong>
+                        Remove the hardcoded API key and use environment variables or a secrets manager.
+                    </div>
+                </div>
+            </div>
+
+            <div class="severity-section">
+                <h2 class="high">HIGH Severity (1)</h2>
+
+                <div class="finding high">
+                    <h3>Vulnerable npm package: express</h3>
+                    <div class="meta">
+                        <span><strong>ID:</strong> AKALI-002</span>
+                        <span><strong>Type:</strong> vulnerable_dependency</span>
+                        <span><strong>CVSS:</strong> 7.5</span>
+                        <span><strong>CWE:</strong> CWE-1104</span>
+                        <span><strong>OWASP:</strong> A06:2021 - Vulnerable and Outdated Components</span>
+                    </div>
+                    <div class="description">express 4.16.0 has known vulnerabilities affecting request handling.</div>
+                    <div class="fix">
+                        <strong>🔧 Recommended Fix:</strong>
+                        Update to express@4.18.2 or later. Run: npm update express
+                    </div>
+                </div>
+            </div>
+
+            <div class="severity-section">
+                <h2 class="medium">MEDIUM Severity (1)</h2>
+
+                <div class="finding medium">
+                    <h3>SQL Injection vulnerability detected</h3>
+                    <div class="meta">
+                        <span><strong>ID:</strong> AKALI-003</span>
+                        <span><strong>Type:</strong> sast_issue</span>
+                        <span><strong>CVSS:</strong> 5.0</span>
+                        <span><strong>CWE:</strong> CWE-89</span>
+                        <span><strong>OWASP:</strong> A03:2021 - Injection</span>
+                        <span><strong>Location:</strong> /app/database.py:89</span>
+                    </div>
+                    <div class="description">Direct string concatenation in SQL query may lead to SQL injection attacks.</div>
+                    <div class="fix">
+                        <strong>🔧 Recommended Fix:</strong>
+                        Use parameterized queries or an ORM to prevent SQL injection.
+                    </div>
+                </div>
+            </div>
+
+            <div class="severity-section">
+                <h2 class="low">LOW Severity (1)</h2>
+
+                <div class="finding low">
+                    <h3>Weak cryptographic algorithm</h3>
+                    <div class="meta">
+                        <span><strong>ID:</strong> AKALI-004</span>
+                        <span><strong>Type:</strong> sast_issue</span>
+                        <span><strong>CVSS:</strong> 3.0</span>
+                        <span><strong>CWE:</strong> CWE-327</span>
+                        <span><strong>Location:</strong> /app/utils.py:15</span>
+                    </div>
+                    <div class="description">Use of MD5 hash function which is cryptographically weak.</div>
+                    <div class="fix">
+                        <strong>🔧 Recommended Fix:</strong>
+                        Use SHA-256 or stronger hashing algorithms.
+                    </div>
+                </div>
+            </div>
+
+            <div class="severity-section">
+                <h2 class="info">INFO Severity (1)</h2>
+
+                <div class="finding info">
+                    <h3>Missing security headers</h3>
+                    <div class="meta">
+                        <span><strong>ID:</strong> AKALI-005</span>
+                        <span><strong>Type:</strong> info</span>
+                    </div>
+                    <div class="description">Application does not set recommended security headers like X-Content-Type-Options.</div>
+                    <div class="fix">
+                        <strong>🔧 Recommended Fix:</strong>
+                        Add security headers to all HTTP responses.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            Generated by <strong>Akali - The Security Sentinel</strong><br>
+            Total Findings: 5 | Scan Type: comprehensive
+        </div>
+    </div>
+</body>
+</html>

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List
 from datetime import datetime
 
-from scanner_base import Scanner, Finding, Severity
+from .scanner_base import Scanner, Finding, Severity
 
 
 class DependencyScanner(Scanner):

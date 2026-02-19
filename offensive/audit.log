@@ -1,0 +1,12 @@
+{"timestamp": "2026-02-19T15:17:54.918033", "event": "TARGET_AUTHORIZED", "data": {"target": "test.example.com", "authorized_by": "Akali Test Suite", "expires_at": null}}
+{"timestamp": "2026-02-19T15:18:07.130516", "event": "TARGET_DEAUTHORIZED", "data": {"target": "test.example.com"}}
+{"timestamp": "2026-02-19T15:18:38.775225", "event": "TARGET_AUTHORIZED", "data": {"target": "authorized.example.com", "authorized_by": "Test Suite", "expires_at": "2026-03-21T15:18:38.774894"}}
+{"timestamp": "2026-02-19T15:18:38.775621", "event": "TARGET_DEAUTHORIZED", "data": {"target": "authorized.example.com"}}
+{"timestamp": "2026-02-19T15:19:10.177785", "event": "TARGET_AUTHORIZED", "data": {"target": "test1.local", "authorized_by": "Test Suite", "expires_at": null}}
+{"timestamp": "2026-02-19T15:19:10.178126", "event": "TARGET_DEAUTHORIZED", "data": {"target": "test1.local"}}
+{"timestamp": "2026-02-19T15:19:10.178507", "event": "TARGET_AUTHORIZED", "data": {"target": "test2.local", "authorized_by": "Test Suite", "expires_at": null}}
+{"timestamp": "2026-02-19T15:19:10.178955", "event": "TARGET_DEAUTHORIZED", "data": {"target": "test2.local"}}
+{"timestamp": "2026-02-19T15:19:10.179314", "event": "TARGET_AUTHORIZED", "data": {"target": "expired.local", "authorized_by": "Test Suite", "expires_at": "2026-02-18T15:19:10.179080"}}
+{"timestamp": "2026-02-19T15:19:10.179639", "event": "TARGET_DEAUTHORIZED", "data": {"target": "expired.local"}}
+{"timestamp": "2026-02-19T15:19:10.180122", "event": "TARGET_AUTHORIZED", "data": {"target": "duplicate.local", "authorized_by": "Test Suite", "expires_at": null}}
+{"timestamp": "2026-02-19T15:19:10.180458", "event": "TARGET_DEAUTHORIZED", "data": {"target": "duplicate.local"}}

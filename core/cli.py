@@ -4,18 +4,18 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-# Add scanners to path
-sys.path.append(str(Path.home() / "akali" / "defensive" / "scanners"))
+# Add project root and scanners to path
+sys.path.insert(0, str(Path.home() / "akali"))
 sys.path.append(str(Path.home() / "akali" / "offensive" / "scanners"))
-sys.path.append(str(Path.home() / "akali" / "data"))
 
-from secrets_scanner import SecretsScanner
-from dependency_scanner import DependencyScanner
-from sast_scanner import SASTScanner
-from scanner_base import Finding
-from findings_db import FindingsDB
+# Import defensive scanners as package (preserves relative imports)
+from defensive.scanners.secrets_scanner import SecretsScanner
+from defensive.scanners.dependency_scanner import DependencyScanner
+from defensive.scanners.sast_scanner import SASTScanner
+from defensive.scanners.scanner_base import Finding
+from data.findings_db import FindingsDB
 
-# Offensive scanners
+# Offensive scanners (standalone imports work due to absolute import strategy)
 from web_vuln_scanner import WebVulnScanner
 from network_scanner import NetworkScanner
 from api_scanner import APIScanner

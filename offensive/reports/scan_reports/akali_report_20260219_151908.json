@@ -1,0 +1,94 @@
+{
+  "metadata": {
+    "target": "test-application",
+    "scan_type": "comprehensive",
+    "generated": "2026-02-19T15:19:08.190946",
+    "tool": "Akali - The Security Sentinel",
+    "version": "2.0"
+  },
+  "summary": {
+    "total_findings": 5,
+    "by_severity": {
+      "critical": 1,
+      "high": 1,
+      "medium": 1,
+      "low": 1,
+      "info": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "AKALI-001",
+      "timestamp": "2026-02-19T15:20:00",
+      "severity": "critical",
+      "type": "hardcoded_secret",
+      "title": "Hardcoded API Key in config.py",
+      "description": "An API key was found hardcoded in the configuration file. This poses a significant security risk.",
+      "file": "/app/config.py",
+      "line": 42,
+      "cvss": 9.5,
+      "cwe": "CWE-798",
+      "owasp": "A02:2021 - Cryptographic Failures",
+      "fix": "Remove the hardcoded API key and use environment variables or a secrets manager.",
+      "status": "open",
+      "scanner": "secrets"
+    },
+    {
+      "id": "AKALI-002",
+      "timestamp": "2026-02-19T15:20:00",
+      "severity": "high",
+      "type": "vulnerable_dependency",
+      "title": "Vulnerable npm package: express",
+      "description": "express 4.16.0 has known vulnerabilities affecting request handling.",
+      "cvss": 7.5,
+      "cwe": "CWE-1104",
+      "owasp": "A06:2021 - Vulnerable and Outdated Components",
+      "fix": "Update to express@4.18.2 or later. Run: npm update express",
+      "status": "open",
+      "scanner": "dependencies"
+    },
+    {
+      "id": "AKALI-003",
+      "timestamp": "2026-02-19T15:20:00",
+      "severity": "medium",
+      "type": "sast_issue",
+      "title": "SQL Injection vulnerability detected",
+      "description": "Direct string concatenation in SQL query may lead to SQL injection attacks.",
+      "file": "/app/database.py",
+      "line": 89,
+      "cvss": 5.0,
+      "cwe": "CWE-89",
+      "owasp": "A03:2021 - Injection",
+      "fix": "Use parameterized queries or an ORM to prevent SQL injection.",
+      "status": "open",
+      "scanner": "sast"
+    },
+    {
+      "id": "AKALI-004",
+      "timestamp": "2026-02-19T15:20:00",
+      "severity": "low",
+      "type": "sast_issue",
+      "title": "Weak cryptographic algorithm",
+      "description": "Use of MD5 hash function which is cryptographically weak.",
+      "file": "/app/utils.py",
+      "line": 15,
+      "cvss": 3.0,
+      "cwe": "CWE-327",
+      "fix": "Use SHA-256 or stronger hashing algorithms.",
+      "status": "open",
+      "scanner": "sast"
+    },
+    {
+      "id": "AKALI-005",
+      "timestamp": "2026-02-19T15:20:00",
+      "severity": "info",
+      "type": "info",
+      "title": "Missing security headers",
+      "description": "Application does not set recommended security headers like X-Content-Type-Options.",
+      "cvss": 0.0,
+      "fix": "Add security headers to all HTTP responses.",
+      "status": "open",
+      "scanner": "web"
+    }
+  ]
+}

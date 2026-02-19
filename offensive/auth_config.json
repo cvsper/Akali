@@ -1,0 +1,6 @@
+{
+  "authorized_targets": [],
+  "require_explicit_consent": true,
+  "audit_enabled": true,
+  "max_scan_duration_hours": 24
+}
