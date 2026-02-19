@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+"""Akali - The Security Sentinel CLI."""
+
+import sys
+import argparse
+from pathlib import Path
+
+# Add core to path
+sys.path.append(str(Path.home() / "akali" / "core"))
+
+from cli import AkaliCLI
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Akali - The Security Sentinel",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  akali scan .                    # Scan current directory
+  akali scan ~/project            # Scan specific directory
+  akali scan --secrets-only       # Run only secrets scanner
+  akali findings list             # List all findings
+  akali findings list --open      # List open findings only
+  akali findings show AKALI-001   # Show finding details
+  akali status                    # Show Akali status
+
+For more help: https://github.com/sevs/akali
+        """
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Commands")
+
+    # Scan command
+    scan_parser = subparsers.add_parser("scan", help="Run security scan")
+    scan_parser.add_argument("target", help="Target directory or file to scan")
+    scan_parser.add_argument("--secrets-only", action="store_true", help="Run only secrets scanner")
+    scan_parser.add_argument("--deps-only", action="store_true", help="Run only dependency scanner")
+    scan_parser.add_argument("--sast-only", action="store_true", help="Run only SAST scanner")
+
+    # Findings command
+    findings_parser = subparsers.add_parser("findings", help="Manage findings")
+    findings_subparsers = findings_parser.add_subparsers(dest="findings_command")
+
+    list_parser = findings_subparsers.add_parser("list", help="List findings")
+    list_parser.add_argument("--open", action="store_true", help="Show only open findings")
+    list_parser.add_argument("--closed", action="store_true", help="Show only closed findings")
+    list_parser.add_argument("--critical", action="store_true", help="Show only critical findings")
+    list_parser.add_argument("--high", action="store_true", help="Show only high severity findings")
+    list_parser.add_argument("--scanner", help="Filter by scanner type")
+
+    show_parser = findings_subparsers.add_parser("show", help="Show finding details")
+    show_parser.add_argument("finding_id", help="Finding ID to show")
+
+    # Status command
+    subparsers.add_parser("status", help="Show Akali status")
+
+    args = parser.parse_args()
+
+    if not args.command:
+        parser.print_help()
+        return
+
+    cli = AkaliCLI()
+
+    try:
+        if args.command == "scan":
+            # Determine which scanners to run
+            scanner_types = []
+            if args.secrets_only:
+                scanner_types = ["secrets"]
+            elif args.deps_only:
+                scanner_types = ["dependencies"]
+            elif args.sast_only:
+                scanner_types = ["sast"]
+
+            print(f"🥷 Akali: Scanning {args.target}...\n")
+            findings = cli.scan(args.target, scanner_types if scanner_types else None)
+
+            if findings:
+                print(f"\n⚠️  Found {len(findings)} security issues")
+                print(f"   Run 'akali findings list' to see details")
+                sys.exit(1)
+            else:
+                print(f"\n✅ No security issues found")
+                sys.exit(0)
+
+        elif args.command == "findings":
+            if args.findings_command == "list":
+                status = None
+                if args.open:
+                    status = "open"
+                elif args.closed:
+                    status = "closed"
+
+                severity = None
+                if args.critical:
+                    severity = "critical"
+                elif args.high:
+                    severity = "high"
+
+                cli.list_findings(status=status, severity=severity, scanner=args.scanner)
+
+            elif args.findings_command == "show":
+                cli.show_finding(args.finding_id)
+
+            else:
+                findings_parser.print_help()
+
+        elif args.command == "status":
+            cli.status()
+
+    except KeyboardInterrupt:
+        print("\n\n👋 Interrupted by user")
+        sys.exit(130)
+    except Exception as e:
+        print(f"\n❌ Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
