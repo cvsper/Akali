@@ -1,0 +1,95 @@
+playbook:
+  id: account-compromise-response
+  name: Account Compromise Response
+  severity: high
+  description: Respond to compromised user or admin account
+  version: 1.0
+
+steps:
+  - id: lock_account
+    name: Lock Compromised Account
+    description: Immediately disable the compromised account
+    type: manual
+    actions:
+      - Disable account login
+      - Revoke all session tokens
+      - Invalidate API keys
+      - Block password reset attempts
+    approval_required: false
+    urgent: true
+
+  - id: review_activity
+    name: Review Account Activity
+    description: Analyze account activity logs for malicious actions
+    type: automated
+    script: forensics/log_collector.py
+    args:
+      - --type=auth
+      - --last=30d
+      - --account={compromised_account}
+
+  - id: identify_vector
+    name: Identify Compromise Vector
+    description: Determine how the account was compromised
+    type: manual
+    checklist:
+      - Check for phishing emails
+      - Review login locations and devices
+      - Look for credential stuffing patterns
+      - Check for malware on user's device
+
+  - id: assess_damage
+    name: Assess Damage
+    description: Determine what actions were taken with the compromised account
+    type: manual
+    checklist:
+      - Review API calls made
+      - Check data access logs
+      - Identify modified resources
+      - Look for privilege escalation attempts
+
+  - id: check_lateral_movement
+    name: Check for Lateral Movement
+    description: Verify attacker did not compromise additional accounts
+    type: manual
+    checklist:
+      - Review access from same IP addresses
+      - Check for credential reuse
+      - Monitor for suspicious account activity
+      - Review admin account access
+
+  - id: reset_credentials
+    name: Reset Credentials
+    description: Reset password and authentication methods
+    type: manual
+    actions:
+      - Force password reset
+      - Reset security questions
+      - Clear all trusted devices
+      - Generate new API keys if applicable
+
+  - id: enable_2fa
+    name: Enable Two-Factor Authentication
+    description: Enforce MFA for the compromised account
+    type: manual
+    actions:
+      - Enable MFA requirement
+      - Provide MFA setup instructions
+      - Verify MFA is working
+      - Document MFA method used
+
+  - id: notify_user
+    name: Notify Account Owner
+    description: Inform user of compromise and required actions
+    type: manual
+    checklist:
+      - Explain what happened
+      - List actions already taken
+      - Provide security recommendations
+      - Document user notification
+
+  - id: post_mortem
+    name: Post-Mortem
+    description: Document incident and improve authentication security
+    type: manual
+    template: incident/templates/post_mortem.md

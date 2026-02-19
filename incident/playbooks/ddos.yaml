@@ -1,0 +1,92 @@
+playbook:
+  id: ddos-response
+  name: DDoS Attack Response
+  severity: high
+  description: Respond to Distributed Denial of Service attack
+  version: 1.0
+
+steps:
+  - id: confirm_ddos
+    name: Confirm DDoS Attack
+    description: Verify that service degradation is due to DDoS
+    type: manual
+    checklist:
+      - Check traffic patterns for anomalies
+      - Review server resource usage
+      - Identify source IP addresses
+      - Determine attack vector (Layer 3/4/7)
+
+  - id: enable_mitigation
+    name: Enable DDoS Mitigation
+    description: Activate DDoS protection services
+    type: manual
+    actions:
+      - Enable Cloudflare DDoS protection
+      - Activate WAF rules
+      - Enable rate limiting
+      - Switch to DDoS-resistant DNS
+
+  - id: block_sources
+    name: Block Attack Sources
+    description: Block malicious IP addresses and patterns
+    type: manual
+    actions:
+      - Identify attacking IP ranges
+      - Block at firewall level
+      - Update ACLs on load balancer
+      - Add IP reputation filters
+
+  - id: scale_infrastructure
+    name: Scale Infrastructure
+    description: Add capacity to handle attack volume
+    type: manual
+    checklist:
+      - Scale up web servers
+      - Add load balancer capacity
+      - Increase bandwidth allocation
+      - Enable auto-scaling if available
+
+  - id: contact_isp
+    name: Contact ISP/Hosting Provider
+    description: Request upstream DDoS mitigation
+    type: manual
+    actions:
+      - Contact ISP security team
+      - Request upstream filtering
+      - Provide attack details
+      - Coordinate mitigation efforts
+
+  - id: analyze_attack
+    name: Analyze Attack Pattern
+    description: Understand attack characteristics for better mitigation
+    type: automated
+    script: forensics/pattern_detector.py
+    args:
+      - --type=network
+      - --last=1h
+
+  - id: notify_users
+    name: Notify Users
+    description: Communicate service status to users
+    type: manual
+    actions:
+      - Post status page update
+      - Send notification emails
+      - Update social media
+      - Provide ETA for resolution
+
+  - id: document_attack
+    name: Document Attack
+    description: Record attack details for future reference
+    type: manual
+    checklist:
+      - Capture traffic logs
+      - Document attack vectors
+      - Note peak traffic volumes
+      - Record mitigation effectiveness
+
+  - id: post_mortem
+    name: Post-Mortem and Hardening
+    description: Review incident and improve DDoS defenses
+    type: manual
+    template: incident/templates/post_mortem.md

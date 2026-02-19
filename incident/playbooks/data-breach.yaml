@@ -1,0 +1,89 @@
+playbook:
+  id: data-breach-response
+  name: Data Breach Response
+  severity: critical
+  description: Respond to confirmed or suspected data breach
+  version: 1.0
+
+steps:
+  - id: confirm_breach
+    name: Confirm Breach Scope
+    description: Determine extent of data exposure
+    type: manual
+    checklist:
+      - Identify compromised systems
+      - Determine data types affected
+      - Estimate number of affected users
+      - Check for ongoing unauthorized access
+
+  - id: contain_breach
+    name: Contain the Breach
+    description: Stop unauthorized access immediately
+    type: manual
+    actions:
+      - Isolate compromised systems
+      - Block attacker IP addresses
+      - Revoke compromised credentials
+      - Disable vulnerable endpoints
+    approval_required: true
+
+  - id: preserve_evidence
+    name: Preserve Evidence
+    description: Collect forensic evidence before remediation
+    type: automated
+    script: forensics/log_collector.py
+    args:
+      - --type=all
+      - --last=7d
+      - --preserve
+
+  - id: invalidate_credentials
+    name: Invalidate Credentials
+    description: Force password reset for affected users
+    type: manual
+    actions:
+      - Identify affected user accounts
+      - Invalidate all session tokens
+      - Force password reset
+      - Enable MFA for all accounts
+
+  - id: notify_affected
+    name: Notify Affected Users
+    description: Send breach notification to affected users
+    type: manual
+    checklist:
+      - Draft breach notification email
+      - Include: what happened, what data, what we're doing
+      - Provide action items for users
+      - Send notifications within regulatory timeframe
+
+  - id: legal_compliance
+    name: Legal and Compliance Notification
+    description: Notify regulators and comply with breach disclosure laws
+    type: manual
+    checklist:
+      - Review applicable regulations (GDPR, CCPA, etc.)
+      - Notify data protection authorities
+      - File required reports
+      - Document all notifications
+
+  - id: patch_vulnerability
+    name: Patch Vulnerability
+    description: Fix the security flaw that caused the breach
+    type: manual
+    actions:
+      - Identify root cause
+      - Apply security patches
+      - Update access controls
+      - Deploy fixes to production
+
+  - id: post_mortem
+    name: Post-Mortem and Prevention
+    description: Document incident and implement preventive measures
+    type: manual
+    template: incident/templates/post_mortem.md
+    checklist:
+      - Document timeline of events
+      - Identify failure points
+      - Create action items
+      - Update security policies

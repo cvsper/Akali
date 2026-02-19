@@ -1,0 +1,107 @@
+playbook:
+  id: insider-threat-response
+  name: Insider Threat Response
+  severity: critical
+  description: Respond to suspected malicious insider activity
+  version: 1.0
+
+steps:
+  - id: assess_threat
+    name: Assess Threat Level
+    description: Determine severity and urgency of insider threat
+    type: manual
+    checklist:
+      - Review reported suspicious behavior
+      - Check data access patterns
+      - Identify potential data exfiltration
+      - Assess risk of ongoing harm
+    approval_required: true
+
+  - id: preserve_evidence
+    name: Preserve Evidence
+    description: Collect evidence before alerting the insider
+    type: automated
+    script: forensics/log_collector.py
+    args:
+      - --type=all
+      - --last=90d
+      - --user={suspected_user}
+      - --preserve
+
+  - id: consult_legal
+    name: Consult Legal Team
+    description: Involve legal counsel before taking action
+    type: manual
+    actions:
+      - Contact legal department
+      - Review employment laws
+      - Discuss termination implications
+      - Document legal guidance
+
+  - id: restrict_access
+    name: Restrict Access
+    description: Limit insider's access to sensitive systems
+    type: manual
+    actions:
+      - Reduce account privileges
+      - Remove admin rights
+      - Disable VPN access
+      - Revoke sensitive data access
+    approval_required: true
+
+  - id: monitor_activity
+    name: Monitor Activity
+    description: Watch for suspicious behavior patterns
+    type: manual
+    checklist:
+      - Enable enhanced logging
+      - Monitor file access
+      - Track data downloads
+      - Watch for unusual hours
+
+  - id: interview
+    name: Conduct Interview
+    description: Interview the suspected insider if appropriate
+    type: manual
+    checklist:
+      - Coordinate with HR
+      - Prepare interview questions
+      - Have legal present
+      - Document responses
+
+  - id: terminate_access
+    name: Terminate Access
+    description: Completely disable insider's access if threat confirmed
+    type: manual
+    actions:
+      - Disable all accounts
+      - Revoke physical access badges
+      - Collect company devices
+      - Block VPN and remote access
+    approval_required: true
+
+  - id: assess_damage
+    name: Assess Damage
+    description: Determine what data or systems were compromised
+    type: manual
+    checklist:
+      - Review data access logs
+      - Identify copied or downloaded files
+      - Check for backdoor accounts
+      - Look for credential theft
+
+  - id: law_enforcement
+    name: Contact Law Enforcement
+    description: Report criminal activity to authorities
+    type: manual
+    checklist:
+      - Determine if criminal charges warranted
+      - Contact appropriate agency
+      - Provide evidence package
+      - Coordinate investigation
+
+  - id: post_mortem
+    name: Post-Mortem and Prevention
+    description: Document incident and improve insider threat detection
+    type: manual
+    template: incident/templates/post_mortem.md

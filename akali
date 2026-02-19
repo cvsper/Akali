@@ -155,6 +155,63 @@ For more help: https://github.com/sevs/akali
 
     dashboard_subparsers.add_parser("status", help="Check dashboard status")
 
+    # Incident Response Commands (Phase 5)
+    # Incident command
+    incident_parser = subparsers.add_parser("incident", help="Incident management")
+    incident_subparsers = incident_parser.add_subparsers(dest="incident_command")
+
+    incident_create_parser = incident_subparsers.add_parser("create", help="Create new incident")
+    incident_create_parser.add_argument("title", help="Incident title")
+    incident_create_parser.add_argument("--severity", required=True, choices=["low", "medium", "high", "critical"], help="Severity level")
+    incident_create_parser.add_argument("--description", help="Incident description")
+    incident_create_parser.add_argument("--type", help="Incident type (sql_injection, data_breach, etc.)")
+    incident_create_parser.add_argument("--systems", nargs="+", help="Affected systems")
+
+    incident_list_parser = incident_subparsers.add_parser("list", help="List incidents")
+    incident_list_parser.add_argument("--status", choices=["new", "active", "contained", "resolved", "closed"], help="Filter by status")
+    incident_list_parser.add_argument("--severity", choices=["low", "medium", "high", "critical"], help="Filter by severity")
+
+    incident_show_parser = incident_subparsers.add_parser("show", help="Show incident details")
+    incident_show_parser.add_argument("incident_id", help="Incident ID")
+
+    incident_update_parser = incident_subparsers.add_parser("update", help="Update incident status")
+    incident_update_parser.add_argument("incident_id", help="Incident ID")
+    incident_update_parser.add_argument("status", choices=["new", "active", "contained", "resolved", "closed"], help="New status")
+
+    incident_close_parser = incident_subparsers.add_parser("close", help="Close incident")
+    incident_close_parser.add_argument("incident_id", help="Incident ID")
+    incident_close_parser.add_argument("resolution", help="Resolution summary")
+
+    # War room command
+    warroom_parser = subparsers.add_parser("war-room", help="War room operations")
+    warroom_subparsers = warroom_parser.add_subparsers(dest="warroom_command")
+
+    warroom_start_parser = warroom_subparsers.add_parser("start", help="Activate war room")
+    warroom_start_parser.add_argument("incident_id", help="Incident ID")
+
+    warroom_stop_parser = warroom_subparsers.add_parser("stop", help="Deactivate war room")
+    warroom_stop_parser.add_argument("--resolution", help="Resolution summary")
+
+    warroom_subparsers.add_parser("status", help="Show war room status")
+
+    # Playbook command
+    playbook_parser = subparsers.add_parser("playbook", help="Playbook operations")
+    playbook_subparsers = playbook_parser.add_subparsers(dest="playbook_command")
+
+    playbook_subparsers.add_parser("list", help="List available playbooks")
+
+    playbook_run_parser = playbook_subparsers.add_parser("run", help="Run a playbook")
+    playbook_run_parser.add_argument("playbook_id", help="Playbook ID")
+    playbook_run_parser.add_argument("incident_id", help="Incident ID")
+
+    playbook_status_parser = playbook_subparsers.add_parser("status", help="Check playbook status")
+    playbook_status_parser.add_argument("run_id", help="Playbook run ID")
+
+    # Post-mortem command
+    postmortem_parser = subparsers.add_parser("post-mortem", help="Generate post-mortem report")
+    postmortem_parser.add_argument("incident_id", help="Incident ID")
+    postmortem_parser.add_argument("--output", help="Output file path")
+
     # Status command
     subparsers.add_parser("status", help="Show Akali status")
 
@@ -310,6 +367,49 @@ For more help: https://github.com/sevs/akali
                 cli.dashboard_status()
             else:
                 dashboard_parser.print_help()
+
+        elif args.command == "incident":
+            if args.incident_command == "create":
+                cli.incident_create(
+                    title=args.title,
+                    severity=args.severity,
+                    description=args.description,
+                    incident_type=args.type,
+                    systems=args.systems
+                )
+            elif args.incident_command == "list":
+                cli.incident_list(status=args.status, severity=args.severity)
+            elif args.incident_command == "show":
+                cli.incident_show(args.incident_id)
+            elif args.incident_command == "update":
+                cli.incident_update(args.incident_id, args.status)
+            elif args.incident_command == "close":
+                cli.incident_close(args.incident_id, args.resolution)
+            else:
+                incident_parser.print_help()
+
+        elif args.command == "war-room":
+            if args.warroom_command == "start":
+                cli.war_room_start(args.incident_id)
+            elif args.warroom_command == "stop":
+                cli.war_room_stop(resolution=args.resolution)
+            elif args.warroom_command == "status":
+                cli.war_room_status()
+            else:
+                warroom_parser.print_help()
+
+        elif args.command == "playbook":
+            if args.playbook_command == "list":
+                cli.playbook_list()
+            elif args.playbook_command == "run":
+                cli.playbook_run(args.playbook_id, args.incident_id)
+            elif args.playbook_command == "status":
+                cli.playbook_status(args.run_id)
+            else:
+                playbook_parser.print_help()
+
+        elif args.command == "post-mortem":
+            cli.post_mortem(args.incident_id, output=args.output)
 
         elif args.command == "status":
             cli.status()

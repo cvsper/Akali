@@ -1,0 +1,96 @@
+playbook:
+  id: ransomware-response
+  name: Ransomware Response
+  severity: critical
+  description: Respond to ransomware infection and encryption
+  version: 1.0
+
+steps:
+  - id: isolate_immediately
+    name: Immediate Isolation
+    description: Isolate infected systems to prevent spread
+    type: manual
+    actions:
+      - Disconnect infected systems from network immediately
+      - Disable network shares and mapped drives
+      - Block affected user accounts
+      - Alert all team members
+    approval_required: false
+    urgent: true
+
+  - id: identify_variant
+    name: Identify Ransomware Variant
+    description: Determine which ransomware strain is involved
+    type: manual
+    checklist:
+      - Capture ransom note screenshot
+      - Check file extensions of encrypted files
+      - Search ransomware databases (ID Ransomware, No More Ransom)
+      - Document encryption patterns
+
+  - id: assess_damage
+    name: Assess Damage
+    description: Determine scope of encryption and data loss
+    type: manual
+    checklist:
+      - List all affected systems
+      - Identify encrypted files and databases
+      - Check backup integrity
+      - Estimate recovery time
+
+  - id: check_decryption
+    name: Check for Decryption Tools
+    description: Search for available decryption tools for this variant
+    type: manual
+    actions:
+      - Check No More Ransom project
+      - Search vendor decryption tools
+      - Check if keys were seized by law enforcement
+      - Test decryption on sample files
+
+  - id: restore_backups
+    name: Restore from Clean Backups
+    description: Restore systems from pre-infection backups
+    type: manual
+    checklist:
+      - Verify backup integrity
+      - Identify last clean backup
+      - Test restore on isolated system first
+      - Document restore process
+    approval_required: true
+
+  - id: patch_entry_point
+    name: Patch Entry Point
+    description: Fix vulnerability that allowed ransomware entry
+    type: manual
+    actions:
+      - Identify initial infection vector
+      - Apply security patches
+      - Update antivirus definitions
+      - Harden system configurations
+
+  - id: law_enforcement
+    name: Contact Law Enforcement
+    description: Report incident to appropriate authorities
+    type: manual
+    checklist:
+      - Contact local FBI field office
+      - File IC3 complaint
+      - Preserve evidence for investigation
+      - Do not pay ransom without legal counsel
+
+  - id: network_segmentation
+    name: Review Network Segmentation
+    description: Improve network isolation to prevent future spread
+    type: manual
+    checklist:
+      - Implement network segmentation
+      - Restrict lateral movement
+      - Deploy EDR solutions
+      - Update incident response plan
+
+  - id: post_mortem
+    name: Post-Mortem
+    description: Document incident and prevention measures
+    type: manual
+    template: incident/templates/post_mortem.md

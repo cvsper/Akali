@@ -1,0 +1,73 @@
+playbook:
+  id: sql-injection-response
+  name: SQL Injection Response
+  severity: critical
+  description: Respond to SQL injection vulnerability or active attack
+  version: 1.0
+
+steps:
+  - id: isolate
+    name: Isolate Affected Service
+    description: Take the vulnerable service offline to prevent further exploitation
+    type: manual
+    actions:
+      - Stop application server
+      - Enable maintenance mode
+      - Notify users of downtime
+    approval_required: true
+
+  - id: review_logs
+    name: Review Query Logs
+    description: Analyze logs to identify malicious queries
+    type: automated
+    script: forensics/log_collector.py
+    args:
+      - --type=sql
+      - --last=24h
+
+  - id: identify_vuln
+    name: Identify Vulnerable Endpoint
+    description: Locate the vulnerable code causing SQL injection
+    type: manual
+    checklist:
+      - Review recent code changes
+      - Check user input handling
+      - Identify unsafe SQL queries
+      - Document file and line number
+
+  - id: apply_fix
+    name: Apply Parameterized Query Fix
+    description: Replace vulnerable query with parameterized version
+    type: manual
+    code_template: |
+      # Bad (vulnerable)
+      query = f"SELECT * FROM users WHERE id = {user_input}"
+
+      # Good (safe)
+      query = "SELECT * FROM users WHERE id = %s"
+      cursor.execute(query, (user_input,))
+
+  - id: test_fix
+    name: Test Fix
+    description: Verify SQL injection is no longer possible
+    type: automated
+    script: offensive/scanners/web_vuln_scanner.py
+    args:
+      - --target=http://localhost:3000
+      - --test=sqli
+
+  - id: restore_service
+    name: Restore Service
+    description: Bring application back online
+    type: manual
+    actions:
+      - Deploy fix to production
+      - Start application server
+      - Disable maintenance mode
+      - Monitor for issues
+
+  - id: post_mortem
+    name: Post-Mortem
+    description: Document incident and lessons learned
+    type: manual
+    template: incident/templates/post_mortem.md

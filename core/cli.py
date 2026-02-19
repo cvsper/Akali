@@ -21,6 +21,12 @@ from network_scanner import NetworkScanner
 from api_scanner import APIScanner
 from exploit_scanner import ExploitScanner
 
+# Incident response modules
+from incident.incidents.incident_tracker import IncidentTracker
+from incident.war_room.war_room_commander import WarRoomCommander
+from incident.playbooks.playbook_engine import PlaybookEngine
+from incident.incidents.post_mortem import PostMortemGenerator
+
 
 class AkaliCLI:
     """Akali command-line interface."""
@@ -38,6 +44,11 @@ class AkaliCLI:
             "api": APIScanner(),
             "exploit": ExploitScanner()
         }
+        # Incident response
+        self.incident_tracker = IncidentTracker()
+        self.war_room_commander = WarRoomCommander()
+        self.playbook_engine = PlaybookEngine()
+        self.post_mortem_generator = PostMortemGenerator()
 
     def scan(self, target: str, scanner_types: Optional[List[str]] = None) -> List[Finding]:
         """Run security scan on target."""
@@ -527,3 +538,158 @@ class AkaliCLI:
         else:
             print(f"❌ Dashboard is not running")
             print(f"   Start with: akali dashboard start")
+
+    # ========== Incident Response Commands ==========
+
+    def incident_create(self, title: str, severity: str, description: Optional[str] = None,
+                       incident_type: Optional[str] = None, systems: Optional[List[str]] = None):
+        """Create a new incident."""
+        incident = self.incident_tracker.create_incident(
+            title=title,
+            severity=severity,
+            description=description,
+            incident_type=incident_type,
+            affected_systems=systems
+        )
+        print(f"\n🚨 Incident created: {incident['id']}")
+        print(f"   Title: {incident['title']}")
+        print(f"   Severity: {incident['severity'].upper()}")
+        print(f"   Status: {incident['status']}")
+
+    def incident_list(self, status: Optional[str] = None, severity: Optional[str] = None):
+        """List incidents."""
+        incidents = self.incident_tracker.list_incidents(status=status, severity=severity)
+
+        if not incidents:
+            print("No incidents found")
+            return
+
+        print(f"\n📋 Found {len(incidents)} incidents:\n")
+        for inc in incidents:
+            severity_emoji = {'critical': '🔴', 'high': '🟠', 'medium': '🟡', 'low': '🟢'}.get(inc['severity'], '⚪')
+            status_emoji = {'new': '🆕', 'active': '⚡', 'contained': '🛡️', 'resolved': '✅', 'closed': '🔒'}.get(inc['status'], '•')
+
+            print(f"{severity_emoji} {status_emoji} {inc['id']}: {inc['title']}")
+            print(f"         {inc['severity'].upper()} | {inc['status']}")
+            print()
+
+    def incident_show(self, incident_id: str):
+        """Show incident details."""
+        report = self.incident_tracker.get_full_incident_report(incident_id)
+        if not report:
+            print(f"Incident not found: {incident_id}")
+            return
+
+        inc = report['incident']
+        print(f"\n🚨 {inc['id']}: {inc['title']}")
+        print(f"   Severity: {inc['severity'].upper()}")
+        print(f"   Status: {inc['status']}")
+        print(f"   Created: {inc['created_at']}")
+
+        if inc['description']:
+            print(f"   Description: {inc['description']}")
+
+        print(f"\n   Timeline events: {len(report['timeline'])}")
+        print(f"   Evidence items: {len(report['evidence'])}")
+        print(f"   Actions: {len(report['actions'])}")
+
+    def incident_update(self, incident_id: str, status: str):
+        """Update incident status."""
+        incident = self.incident_tracker.update_status(incident_id, status, actor='akali-cli')
+        if incident:
+            print(f"✅ {incident_id} status updated to: {status}")
+        else:
+            print(f"❌ Failed to update incident")
+
+    def incident_close(self, incident_id: str, resolution: str):
+        """Close an incident."""
+        incident = self.incident_tracker.close_incident(incident_id, resolution, actor='akali-cli')
+        if incident:
+            print(f"✅ {incident_id} closed")
+        else:
+            print(f"❌ Failed to close incident")
+
+    def war_room_start(self, incident_id: str):
+        """Activate war room for an incident."""
+        state = self.war_room_commander.activate_war_room(incident_id, notify_team=True)
+        print(f"\n🚨 WAR ROOM ACTIVATED")
+        print(f"   Incident: {incident_id}")
+        print(f"   Team notified: ✅")
+        print(f"   Status: http://localhost:8765/incidents/{incident_id}")
+
+    def war_room_stop(self, resolution: Optional[str] = None):
+        """Deactivate war room."""
+        success = self.war_room_commander.deactivate_war_room(resolution, notify_team=True)
+        if success:
+            print(f"✅ War room deactivated")
+        else:
+            print(f"❌ No active war room")
+
+    def war_room_status(self):
+        """Show war room status."""
+        status = self.war_room_commander.get_status()
+        if not status:
+            print("No active war room")
+            return
+
+        inc = status['incident']
+        print(f"\n🚨 ACTIVE WAR ROOM")
+        print(f"   Incident: {inc['id']} - {inc['title']}")
+        print(f"   Severity: {inc['severity'].upper()}")
+        print(f"   Status: {inc['status']}")
+        print(f"   Duration: {status['duration']}")
+        print(f"   Timeline events: {len(status['timeline'])}")
+
+    def playbook_list(self):
+        """List available playbooks."""
+        playbooks = self.playbook_engine.list_playbooks()
+
+        if not playbooks:
+            print("No playbooks found")
+            return
+
+        print(f"\n📋 Available Playbooks:\n")
+        for pb in playbooks:
+            severity_emoji = {'critical': '🔴', 'high': '🟠', 'medium': '🟡', 'low': '🟢'}.get(pb['severity'], '⚪')
+            print(f"{severity_emoji} {pb['id']}")
+            print(f"   {pb['name']}")
+            print(f"   {pb['description']}")
+            print()
+
+    def playbook_run(self, playbook_id: str, incident_id: str):
+        """Run a playbook for an incident."""
+        run_id = self.playbook_engine.start_playbook(playbook_id, incident_id, auto_execute=False)
+        print(f"\n📋 Playbook started: {run_id}")
+        print(f"   Playbook: {playbook_id}")
+        print(f"   Incident: {incident_id}")
+
+        # Show first step
+        step = self.playbook_engine.get_current_step(run_id)
+        if step:
+            print(f"\n   Current step: {step['name']}")
+            print(f"   {step['description']}")
+            print(f"\n   Execute with: akali playbook step {run_id} {step['id']}")
+
+    def playbook_status(self, run_id: str):
+        """Check playbook execution status."""
+        status = self.playbook_engine.get_run_status(run_id)
+        if not status:
+            print(f"Playbook run not found: {run_id}")
+            return
+
+        print(f"\n📋 Playbook Run: {run_id}")
+        print(f"   Playbook: {status['playbook_name']}")
+        print(f"   Incident: {status['incident_id']}")
+        print(f"   Status: {status['status']}")
+        print(f"   Progress: {status['current_step']}/{status['total_steps']}")
+
+        if status['status'] == 'running':
+            step = self.playbook_engine.get_current_step(run_id)
+            if step:
+                print(f"\n   Current step: {step['name']}")
+
+    def post_mortem(self, incident_id: str, output: Optional[str] = None):
+        """Generate post-mortem report."""
+        report_path = self.post_mortem_generator.generate_report(incident_id, output)
+        print(f"\n✅ Post-mortem report generated:")
+        print(f"   {report_path}")
