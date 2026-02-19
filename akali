@@ -114,6 +114,47 @@ For more help: https://github.com/sevs/akali
     triage_parser = subparsers.add_parser("triage", help="Automated triage")
     triage_parser.add_argument("finding_id", help="Finding ID to triage")
 
+    # Intel command (Phase 4)
+    intel_parser = subparsers.add_parser("intel", help="Threat intelligence operations")
+    intel_subparsers = intel_parser.add_subparsers(dest="intel_command")
+
+    intel_cve_parser = intel_subparsers.add_parser("cve-check", help="Check for new CVEs")
+    intel_cve_parser.add_argument("--hours", type=int, default=24, help="Hours to look back (default: 24)")
+
+    intel_lookup_parser = intel_subparsers.add_parser("cve-lookup", help="Lookup specific CVE")
+    intel_lookup_parser.add_argument("cve_id", help="CVE identifier")
+
+    intel_subparsers.add_parser("scan-deps", help="Scan all projects for dependencies")
+
+    intel_impact_parser = intel_subparsers.add_parser("impact", help="Analyze CVE impact")
+    intel_impact_parser.add_argument("cve_id", help="CVE identifier")
+
+    intel_subparsers.add_parser("threat-feed", help="Show threat intelligence feed")
+
+    intel_breach_parser = intel_subparsers.add_parser("breach-check", help="Check for breached emails")
+    intel_breach_parser.add_argument("email", help="Email address to check")
+
+    # Metrics command (Phase 4)
+    metrics_parser = subparsers.add_parser("metrics", help="Security metrics and observatory")
+    metrics_subparsers = metrics_parser.add_subparsers(dest="metrics_command")
+
+    metrics_subparsers.add_parser("score", help="Show security scorecard")
+
+    metrics_history_parser = metrics_subparsers.add_parser("history", help="Show score history")
+    metrics_history_parser.add_argument("--days", type=int, default=30, help="Days to show (default: 30)")
+
+    metrics_subparsers.add_parser("observatory", help="Show MTTD/MTTR metrics")
+
+    # Dashboard command (Phase 4)
+    dashboard_parser = subparsers.add_parser("dashboard", help="Web dashboard operations")
+    dashboard_subparsers = dashboard_parser.add_subparsers(dest="dashboard_command")
+
+    dashboard_start_parser = dashboard_subparsers.add_parser("start", help="Start dashboard server")
+    dashboard_start_parser.add_argument("--port", type=int, default=8765, help="Port to run on (default: 8765)")
+    dashboard_start_parser.add_argument("--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)")
+
+    dashboard_subparsers.add_parser("status", help="Check dashboard status")
+
     # Status command
     subparsers.add_parser("status", help="Show Akali status")
 
@@ -235,6 +276,40 @@ For more help: https://github.com/sevs/akali
 
         elif args.command == "triage":
             cli.triage_finding(args.finding_id)
+
+        elif args.command == "intel":
+            if args.intel_command == "cve-check":
+                cli.intel_cve_check(hours=args.hours)
+            elif args.intel_command == "cve-lookup":
+                cli.intel_cve_lookup(args.cve_id)
+            elif args.intel_command == "scan-deps":
+                cli.intel_scan_deps()
+            elif args.intel_command == "impact":
+                cli.intel_impact(args.cve_id)
+            elif args.intel_command == "threat-feed":
+                cli.intel_threat_feed()
+            elif args.intel_command == "breach-check":
+                cli.intel_breach_check(args.email)
+            else:
+                intel_parser.print_help()
+
+        elif args.command == "metrics":
+            if args.metrics_command == "score" or not args.metrics_command:
+                cli.metrics_score()
+            elif args.metrics_command == "history":
+                cli.metrics_history(days=args.days)
+            elif args.metrics_command == "observatory":
+                cli.metrics_observatory()
+            else:
+                metrics_parser.print_help()
+
+        elif args.command == "dashboard":
+            if args.dashboard_command == "start":
+                cli.dashboard_start(host=args.host, port=args.port)
+            elif args.dashboard_command == "status":
+                cli.dashboard_status()
+            else:
+                dashboard_parser.print_help()
 
         elif args.command == "status":
             cli.status()

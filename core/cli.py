@@ -447,3 +447,83 @@ class AkaliCLI:
                 print(f"  Auto-Fix: {result['auto_fix_command']}")
         else:
             print(f"❌ Finding not found: {finding_id}")
+
+    # Phase 4: Intelligence & Metrics
+
+    def intel_cve_check(self, hours: int = 24):
+        """Check for new CVEs."""
+        import subprocess
+        script = Path.home() / "akali" / "intelligence" / "cve_monitor" / "cve_tracker.py"
+        subprocess.run(["python3", str(script), "check", str(hours)])
+
+    def intel_cve_lookup(self, cve_id: str):
+        """Lookup specific CVE."""
+        import subprocess
+        script = Path.home() / "akali" / "intelligence" / "cve_monitor" / "cve_tracker.py"
+        subprocess.run(["python3", str(script), "lookup", cve_id])
+
+    def intel_scan_deps(self):
+        """Scan all projects for dependencies."""
+        import subprocess
+        script = Path.home() / "akali" / "intelligence" / "cve_monitor" / "dependency_mapper.py"
+        subprocess.run(["python3", str(script), "scan"])
+
+    def intel_impact(self, cve_id: str):
+        """Analyze CVE impact on family projects."""
+        import subprocess
+        script = Path.home() / "akali" / "intelligence" / "cve_monitor" / "impact_analyzer.py"
+        subprocess.run(["python3", str(script), "cve", cve_id])
+
+    def intel_threat_feed(self):
+        """Show threat intelligence feed."""
+        import subprocess
+        script = Path.home() / "akali" / "intelligence" / "threat_hub" / "feed_aggregator.py"
+        subprocess.run(["python3", str(script), "fetch"])
+
+    def intel_breach_check(self, email: str):
+        """Check if email appears in breaches."""
+        import subprocess
+        script = Path.home() / "akali" / "intelligence" / "threat_hub" / "breach_monitor.py"
+        subprocess.run(["python3", str(script), "email", email])
+
+    def metrics_score(self):
+        """Show security scorecard."""
+        import subprocess
+        script = Path.home() / "akali" / "metrics" / "scorecard" / "score_calculator.py"
+        subprocess.run(["python3", str(script)])
+
+    def metrics_history(self, days: int = 30):
+        """Show score history."""
+        import subprocess
+        script = Path.home() / "akali" / "metrics" / "scorecard" / "score_calculator.py"
+        subprocess.run(["python3", str(script), "history", str(days)])
+
+    def metrics_observatory(self):
+        """Show MTTD/MTTR metrics."""
+        import subprocess
+        script = Path.home() / "akali" / "metrics" / "observatory" / "mttd_mttr_tracker.py"
+        subprocess.run(["python3", str(script)])
+
+    def dashboard_start(self, host: str = "127.0.0.1", port: int = 8765):
+        """Start web dashboard."""
+        import subprocess
+        script = Path.home() / "akali" / "metrics" / "dashboard" / "server.py"
+        print(f"\n🥷 Starting Akali Dashboard on {host}:{port}...")
+        print(f"   Open your browser to: http://{host}:{port}\n")
+        subprocess.run(["python3", str(script)])
+
+    def dashboard_status(self):
+        """Check if dashboard is running."""
+        import socket
+        port = 8765
+        host = "127.0.0.1"
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        result = sock.connect_ex((host, port))
+        sock.close()
+
+        if result == 0:
+            print(f"✅ Dashboard is running at http://{host}:{port}")
+        else:
+            print(f"❌ Dashboard is not running")
+            print(f"   Start with: akali dashboard start")

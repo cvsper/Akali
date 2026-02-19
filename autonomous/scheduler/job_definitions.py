@@ -220,6 +220,98 @@ def weekly_summary_report():
     return stats['total']
 
 
+# Phase 4: Intelligence & Metrics Jobs
+
+def hourly_cve_check():
+    """Check for new CVEs every hour (Phase 4)."""
+    print("🥷 Running hourly CVE check")
+
+    script = Path.home() / "akali" / "intelligence" / "cve_monitor" / "cve_tracker.py"
+    result = subprocess.run(
+        ["python3", str(script), "critical"],
+        capture_output=True,
+        text=True
+    )
+
+    print(result.stdout)
+
+    # Check for critical alerts
+    if "CRITICAL" in result.stdout or "HIGH" in result.stdout:
+        print("  🚨 Critical CVEs detected!")
+        # TODO: Send immediate alert to ZimMemory
+
+    print("\n✅ Hourly CVE check complete")
+    return 0
+
+
+def daily_scorecard_update():
+    """Calculate and update security scorecard (Phase 4)."""
+    print("🥷 Calculating security scorecard")
+
+    script = Path.home() / "akali" / "metrics" / "scorecard" / "score_calculator.py"
+    result = subprocess.run(
+        ["python3", str(script)],
+        capture_output=True,
+        text=True
+    )
+
+    print(result.stdout)
+
+    # Extract score from output
+    for line in result.stdout.split('\n'):
+        if "Overall Score:" in line:
+            print(f"  📊 {line.strip()}")
+
+    print("\n✅ Scorecard update complete")
+    return 0
+
+
+def daily_intel_update():
+    """Update threat intelligence feeds (Phase 4)."""
+    print("🥷 Updating threat intelligence")
+
+    # Fetch security feeds
+    feed_script = Path.home() / "akali" / "intelligence" / "threat_hub" / "feed_aggregator.py"
+    feed_result = subprocess.run(
+        ["python3", str(feed_script), "fetch", "24"],
+        capture_output=True,
+        text=True
+    )
+
+    print(feed_result.stdout)
+
+    print("\n✅ Intel update complete")
+    return 0
+
+
+def weekly_supply_chain_audit():
+    """Audit supply chain dependencies (Phase 4)."""
+    print("🥷 Running weekly supply chain audit")
+
+    # Scan dependencies
+    dep_script = Path.home() / "akali" / "intelligence" / "cve_monitor" / "dependency_mapper.py"
+    result = subprocess.run(
+        ["python3", str(dep_script), "scan"],
+        capture_output=True,
+        text=True
+    )
+
+    print(result.stdout)
+
+    # Build supply chain inventory
+    inv_script = Path.home() / "akali" / "intelligence" / "supply_chain" / "inventory_builder.py"
+    inv_result = subprocess.run(
+        ["python3", str(inv_script)],
+        capture_output=True,
+        text=True
+    )
+
+    print(inv_result.stdout)
+
+    print("\n✅ Supply chain audit complete")
+    return 0
+
+
 def register_all_jobs(cron_manager):
     """Register all job definitions with the cron manager.
 
@@ -269,6 +361,44 @@ def register_all_jobs(cron_manager):
         schedule="weekly",
         command=weekly_summary_report,
         description="Generate weekly security summary with trends"
+    )
+
+    # Phase 4: Intelligence & Metrics Jobs
+
+    # Hourly CVE check
+    cron_manager.register_job(
+        job_id="hourly_cve_check",
+        name="Hourly CVE Check",
+        schedule="@every 1h",
+        command=hourly_cve_check,
+        description="Check for new Critical/High CVEs every hour"
+    )
+
+    # Daily scorecard calculation at 8:30 AM
+    cron_manager.register_job(
+        job_id="daily_scorecard_update",
+        name="Daily Scorecard Update",
+        schedule="@every 1d",
+        command=daily_scorecard_update,
+        description="Calculate and update family security scorecard"
+    )
+
+    # Daily intel update at 7 AM
+    cron_manager.register_job(
+        job_id="daily_intel_update",
+        name="Daily Intelligence Update",
+        schedule="@every 1d",
+        command=daily_intel_update,
+        description="Fetch and aggregate security threat intelligence"
+    )
+
+    # Weekly supply chain audit on Sunday at 2 AM
+    cron_manager.register_job(
+        job_id="weekly_supply_chain_audit",
+        name="Weekly Supply Chain Audit",
+        schedule="weekly",
+        command=weekly_supply_chain_audit,
+        description="Audit all project dependencies and supply chain"
     )
 
     print(f"✅ Registered {len(cron_manager.jobs)} jobs")

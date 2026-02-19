@@ -2,7 +2,7 @@
 
 Comprehensive security agent for the family's projects and infrastructure.
 
-**Current Phase:** Phase 3 (Autonomous Operations) ✅
+**Current Phase:** Phase 4 (Intelligence & Metrics) ✅
 
 ## Quick Start
 
@@ -71,6 +71,20 @@ akali exploit CVE-2021-44228
 ✅ **Triage Engine** - Risk scoring, false positive detection, auto-remediation
 ✅ **launchd Integration** - Auto-start daemons on boot (macOS)
 ✅ **Job Definitions** - Daily defensive scans, weekly offensive scans, CVE checks, reports
+
+### Phase 4: Intelligence & Metrics ✅
+
+✅ **CVE Monitoring** - Hourly checks of NVD and GitHub Security Advisories
+✅ **Dependency Mapper** - Track all packages across all family projects
+✅ **Impact Analyzer** - Calculate CVE blast radius (which projects affected)
+✅ **Threat Intelligence Hub** - Exploit tracker, security feeds, breach monitoring
+✅ **Supply Chain Auditor** - Complete dependency inventory and health checks
+✅ **Security Scorecard** - Family security score (0-100) with component breakdown
+✅ **Security Observatory** - MTTD/MTTR tracking, finding lifecycle metrics
+✅ **Web Dashboard** - Real-time metrics visualization at localhost:8765
+✅ **Intel CLI** - Commands for CVE checks, threat feeds, breach monitoring
+✅ **Metrics CLI** - Commands for scorecard, history, observatory
+✅ **Autonomous Intel Jobs** - Hourly CVE checks, daily scorecard, weekly supply chain audit
 
 ## Installation
 
@@ -358,4 +372,4 @@ akali findings --help
 
 ---
 
-**Phase 1 Complete** ✅ | **Phase 2 Complete** ✅ | **Phase 3 Complete** ✅ | Next: Phase 4 (Intelligence & Metrics)
+**Phase 1 Complete** ✅ | **Phase 2 Complete** ✅ | **Phase 3 Complete** ✅ | **Phase 4 Complete** ✅ | Next: Phase 5 (Incident Response)
