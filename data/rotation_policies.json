@@ -20,5 +20,27 @@
     "last_rotated": null,
     "next_rotation": "2026-03-21T22:11:25.063436",
     "metadata": {}
+  },
+  "db-rotation": {
+    "policy_id": "db-rotation",
+    "secret_path": "prod/database",
+    "rotation_type": "time_based",
+    "rotation_interval_days": 30,
+    "rotation_handler": null,
+    "enabled": true,
+    "last_rotated": "2026-02-19T22:14:52.154856",
+    "next_rotation": "2026-03-21T22:14:52.154861",
+    "metadata": {}
+  },
+  "api-rotation": {
+    "policy_id": "api-rotation",
+    "secret_path": "prod/api",
+    "rotation_type": "time_based",
+    "rotation_interval_days": 7,
+    "rotation_handler": null,
+    "enabled": true,
+    "last_rotated": null,
+    "next_rotation": "2026-02-26T22:14:52.154353",
+    "metadata": {}
   }
 }

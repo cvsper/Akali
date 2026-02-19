@@ -1,0 +1,13 @@
+[
+  {
+    "log_id": "ROT-20260219221452",
+    "policy_id": "db-rotation",
+    "secret_path": "prod/database",
+    "timestamp": "2026-02-19T22:14:52.155210",
+    "status": "success",
+    "error_message": null,
+    "old_version": 1,
+    "new_version": 2,
+    "metadata": null
+  }
+]
