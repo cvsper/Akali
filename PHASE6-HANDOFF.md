@@ -65,10 +65,10 @@
 - [x] Task 12: CI/CD integration helpers
 
 ### DLP System (Tasks 13-16)
-- [ ] Task 13: PII detection engine
-- [ ] Task 14: Content inspection rules
-- [ ] Task 15: Monitoring & alerting
-- [ ] Task 16: Policy enforcement engine
+- [x] Task 13: PII detection engine
+- [x] Task 14: Content inspection rules
+- [x] Task 15: Monitoring & alerting
+- [x] Task 16: Policy enforcement engine
 
 ### Threat Hunting (Tasks 17-20)
 - [ ] Task 17: Behavioral analysis engine
