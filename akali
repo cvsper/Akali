@@ -352,6 +352,27 @@ For more help: https://github.com/sevs/akali
     dlp_monitor_parser.add_argument("--port", type=int, default=5050, help="API monitor port")
     dlp_monitor_parser.add_argument("--action", choices=["check", "install"], default="check", help="Git action")
 
+    # Threat Hunting commands
+    hunt_parser = subparsers.add_parser("hunt", help="Advanced threat hunting operations")
+    hunt_subparsers = hunt_parser.add_subparsers(dest="hunt_command")
+
+    hunt_analyze_parser = hunt_subparsers.add_parser("analyze", help="Analyze logs for threats")
+    hunt_analyze_parser.add_argument("log_file", help="Log file to analyze (JSON format)")
+    hunt_analyze_parser.add_argument("--type", choices=["auto", "login", "network", "api", "file"], default="auto", help="Analysis type")
+
+    hunt_ioc_parser = hunt_subparsers.add_parser("ioc", help="Check IoC against database")
+    hunt_ioc_parser.add_argument("indicator", help="Indicator to check (IP, domain, hash)")
+
+    hunt_ioc_import_parser = hunt_subparsers.add_parser("ioc-import", help="Import IoCs from file")
+    hunt_ioc_import_parser.add_argument("feed_file", help="IoC feed file (JSON)")
+    hunt_ioc_import_parser.add_argument("--name", default="custom", help="Feed name")
+
+    hunt_report_parser = hunt_subparsers.add_parser("report", help="Generate threat report")
+    hunt_report_parser.add_argument("findings_file", help="Findings file (JSON)")
+    hunt_report_parser.add_argument("--format", choices=["markdown", "html", "json"], default="markdown", help="Report format")
+
+    hunt_stats_parser = hunt_subparsers.add_parser("stats", help="Show hunting statistics")
+
     # Status command
     subparsers.add_parser("status", help="Show Akali status")
 
@@ -655,6 +676,25 @@ For more help: https://github.com/sevs/akali
 
             else:
                 dlp_parser.print_help()
+
+        elif args.command == "hunt":
+            if args.hunt_command == "analyze":
+                cli.hunt_analyze(args.log_file, analysis_type=args.type)
+
+            elif args.hunt_command == "ioc":
+                cli.hunt_ioc(args.indicator)
+
+            elif args.hunt_command == "ioc-import":
+                cli.hunt_ioc_import(args.feed_file, feed_name=args.name)
+
+            elif args.hunt_command == "report":
+                cli.hunt_report(args.findings_file, output_format=args.format)
+
+            elif args.hunt_command == "stats":
+                cli.hunt_stats()
+
+            else:
+                hunt_parser.print_help()
 
         elif args.command == "status":
             cli.status()
