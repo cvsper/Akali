@@ -59,10 +59,10 @@
 - [ ] Task 8: Reporting & metrics dashboard
 
 ### Secrets Vault (Tasks 9-12)
-- [ ] Task 9: Vault client library
-- [ ] Task 10: Secret rotation automation
-- [ ] Task 11: CLI commands (`akali vault`)
-- [ ] Task 12: CI/CD integration helpers
+- [x] Task 9: Vault client library
+- [x] Task 10: Secret rotation automation
+- [x] Task 11: CLI commands (`akali vault`)
+- [x] Task 12: CI/CD integration helpers
 
 ### DLP System (Tasks 13-16)
 - [ ] Task 13: PII detection engine
