@@ -6,6 +6,7 @@ from typing import List, Optional
 
 # Add scanners to path
 sys.path.append(str(Path.home() / "akali" / "defensive" / "scanners"))
+sys.path.append(str(Path.home() / "akali" / "offensive" / "scanners"))
 sys.path.append(str(Path.home() / "akali" / "data"))
 
 from secrets_scanner import SecretsScanner
@@ -13,6 +14,12 @@ from dependency_scanner import DependencyScanner
 from sast_scanner import SASTScanner
 from scanner_base import Finding
 from findings_db import FindingsDB
+
+# Offensive scanners
+from web_vuln_scanner import WebVulnScanner
+from network_scanner import NetworkScanner
+from api_scanner import APIScanner
+from exploit_scanner import ExploitScanner
 
 
 class AkaliCLI:
@@ -24,6 +31,12 @@ class AkaliCLI:
             "secrets": SecretsScanner(),
             "dependencies": DependencyScanner(),
             "sast": SASTScanner()
+        }
+        self.offensive_scanners = {
+            "web": WebVulnScanner(),
+            "network": NetworkScanner(),
+            "api": APIScanner(),
+            "exploit": ExploitScanner()
         }
 
     def scan(self, target: str, scanner_types: Optional[List[str]] = None) -> List[Finding]:
@@ -156,14 +169,124 @@ class AkaliCLI:
 
         print()
 
+    def attack(self, target: str, attack_type: str = "full", quick: bool = False, **kwargs) -> List[Finding]:
+        """Run offensive security scan on target.
+
+        ⚠️  WARNING: Only use on systems you own or have explicit permission to test.
+
+        Args:
+            target: Target URL/hostname/IP
+            attack_type: Type of attack scan (web, network, api, full)
+            quick: Run quick scans only
+            **kwargs: Additional scanner-specific arguments
+
+        Returns:
+            List of findings
+        """
+        print("\n⚠️  AUTHORIZATION CHECK")
+        print("Offensive scanning requires explicit permission.")
+        print("Only scan systems you own or have written authorization to test.")
+
+        consent = input("\nDo you have authorization to scan this target? (yes/no): ")
+        if consent.lower() != "yes":
+            print("❌ Scan cancelled. Authorization required.")
+            return []
+
+        all_findings = []
+
+        if attack_type in ["web", "full"]:
+            print("\n🕷️  Running web vulnerability scan...")
+            scanner = self.offensive_scanners["web"]
+            if scanner.check_available():
+                try:
+                    findings = scanner.scan(target, quick=quick)
+                    all_findings.extend(findings)
+                    if findings:
+                        self.db.add_findings([f.to_dict() for f in findings])
+                except Exception as e:
+                    print(f"   ❌ Web scan error: {e}")
+            else:
+                print("   ⚠️  Web scanner not available (tools not installed)")
+
+        if attack_type in ["network", "full"]:
+            print("\n🌐 Running network scan...")
+            scanner = self.offensive_scanners["network"]
+            if scanner.check_available():
+                try:
+                    findings = scanner.scan(target, quick=quick, ports=kwargs.get("ports"))
+                    all_findings.extend(findings)
+                    if findings:
+                        self.db.add_findings([f.to_dict() for f in findings])
+                except Exception as e:
+                    print(f"   ❌ Network scan error: {e}")
+            else:
+                print("   ⚠️  Network scanner not available (tools not installed)")
+
+        if attack_type in ["api", "full"]:
+            print("\n🔌 Running API scan...")
+            scanner = self.offensive_scanners["api"]
+            if scanner.check_available():
+                try:
+                    findings = scanner.scan(target, wordlist=kwargs.get("wordlist"))
+                    all_findings.extend(findings)
+                    if findings:
+                        self.db.add_findings([f.to_dict() for f in findings])
+                except Exception as e:
+                    print(f"   ❌ API scan error: {e}")
+            else:
+                print("   ⚠️  API scanner not available (tools not installed)")
+
+        print(f"\n✅ Attack scan complete. Found {len(all_findings)} total findings.")
+
+        # Print summary
+        by_severity = {}
+        for finding in all_findings:
+            by_severity[finding.severity] = by_severity.get(finding.severity, 0) + 1
+
+        if by_severity:
+            print("\nFindings by severity:")
+            for severity in ["critical", "high", "medium", "low", "info"]:
+                count = by_severity.get(severity, 0)
+                if count > 0:
+                    print(f"  {severity.upper()}: {count}")
+
+        return all_findings
+
+    def exploit(self, cve_id: str):
+        """Look up CVE and exploit information.
+
+        Args:
+            cve_id: CVE identifier (e.g., CVE-2021-44228)
+        """
+        scanner = self.offensive_scanners["exploit"]
+
+        if not scanner.check_available():
+            print("⚠️  Warning: NVD API not accessible. Results may be limited.")
+
+        cve_info = scanner.lookup_cve(cve_id)
+
+        if cve_info:
+            scanner.print_cve_report(cve_info)
+        else:
+            print(f"❌ Failed to retrieve information for {cve_id}")
+
     def status(self):
         """Show Akali status and tool availability."""
         print("\n🥷 Akali Status\n")
 
-        print("Installed Scanners:")
+        print("Defensive Scanners:")
         for name, scanner in self.scanners.items():
             available = "✅" if scanner.check_available() else "❌"
             print(f"  {available} {name}")
+
+        print("\nOffensive Scanners:")
+        for name, scanner in self.offensive_scanners.items():
+            if name == "exploit":
+                # Exploit scanner is API-based, always "available"
+                print(f"  ✅ {name} (CVE lookup)")
+            else:
+                available = "✅" if scanner.check_available() else "❌"
+                print(f"  {available} {name}")
 
         print()
         self.show_stats()

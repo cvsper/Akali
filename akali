@@ -16,13 +16,21 @@ def main():
         description="Akali - The Security Sentinel",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
+Defensive Examples:
   akali scan .                    # Scan current directory
   akali scan ~/project            # Scan specific directory
   akali scan --secrets-only       # Run only secrets scanner
   akali findings list             # List all findings
-  akali findings list --open      # List open findings only
   akali findings show AKALI-001   # Show finding details
+
+Offensive Examples (requires authorization):
+  akali attack https://example.com --web      # Web vulnerability scan
+  akali attack 192.168.1.1 --network          # Network scan
+  akali attack https://api.example.com --api  # API security scan
+  akali attack https://example.com --full     # Full offensive scan
+  akali exploit CVE-2021-44228                # CVE lookup
+
+Status:
   akali status                    # Show Akali status
 
 For more help: https://github.com/sevs/akali
@@ -51,6 +59,21 @@ For more help: https://github.com/sevs/akali
 
     show_parser = findings_subparsers.add_parser("show", help="Show finding details")
     show_parser.add_argument("finding_id", help="Finding ID to show")
+
+    # Attack command (offensive)
+    attack_parser = subparsers.add_parser("attack", help="⚠️  Run offensive security scan (requires authorization)")
+    attack_parser.add_argument("target", help="Target URL, hostname, or IP")
+    attack_parser.add_argument("--web", action="store_true", help="Web vulnerability scan")
+    attack_parser.add_argument("--network", action="store_true", help="Network scan")
+    attack_parser.add_argument("--api", action="store_true", help="API security scan")
+    attack_parser.add_argument("--full", action="store_true", help="Full offensive scan (all attack types)")
+    attack_parser.add_argument("--quick", action="store_true", help="Quick scan mode")
+    attack_parser.add_argument("--ports", help="Port specification for network scan (e.g., 80,443)")
+    attack_parser.add_argument("--wordlist", help="Wordlist path for API endpoint discovery")
+
+    # Exploit command
+    exploit_parser = subparsers.add_parser("exploit", help="Look up CVE and exploit information")
+    exploit_parser.add_argument("cve_id", help="CVE identifier (e.g., CVE-2021-44228)")
 
     # Status command
     subparsers.add_parser("status", help="Show Akali status")
@@ -106,6 +129,42 @@ For more help: https://github.com/sevs/akali
 
             else:
                 findings_parser.print_help()
+
+        elif args.command == "attack":
+            # Determine attack type
+            if args.web:
+                attack_type = "web"
+            elif args.network:
+                attack_type = "network"
+            elif args.api:
+                attack_type = "api"
+            elif args.full:
+                attack_type = "full"
+            else:
+                # Default to full if no specific type
+                attack_type = "full"
+
+            print(f"🥷 Akali: Offensive scan on {args.target}\n")
+
+            # Pass additional kwargs
+            kwargs = {}
+            if args.ports:
+                kwargs["ports"] = args.ports
+            if args.wordlist:
+                kwargs["wordlist"] = args.wordlist
+
+            findings = cli.attack(args.target, attack_type=attack_type, quick=args.quick, **kwargs)
+
+            if findings:
+                print(f"\n⚠️  Found {len(findings)} security issues")
+                print(f"   Run 'akali findings list' to see details")
+                sys.exit(1)
+            else:
+                print(f"\n✅ No critical vulnerabilities found")
+                sys.exit(0)
+
+        elif args.command == "exploit":
+            cli.exploit(args.cve_id)
 
         elif args.command == "status":
             cli.status()

