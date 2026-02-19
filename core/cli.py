@@ -290,3 +290,160 @@ class AkaliCLI:
 
         print()
         self.show_stats()
+
+    # Phase 3: Autonomous Operations
+
+    def schedule_list(self):
+        """List all scheduled jobs."""
+        from autonomous.scheduler.cron_manager import CronManager
+        from autonomous.scheduler.job_definitions import register_all_jobs
+
+        manager = CronManager()
+        register_all_jobs(manager)
+
+        jobs = manager.list_jobs()
+        if not jobs:
+            print("No scheduled jobs.")
+        else:
+            print(f"\n📋 Scheduled Jobs ({len(jobs)}):\n")
+            for job in jobs:
+                status_emoji = "✅" if job["enabled"] else "❌"
+                print(f"{status_emoji} {job['job_id']} - {job['name']}")
+                print(f"   Schedule: {job['schedule']}")
+                if job['next_run']:
+                    print(f"   Next run: {job['next_run']}")
+                if job['last_run']:
+                    print(f"   Last run: {job['last_run']} ({job['last_status']})")
+                print()
+
+    def schedule_run(self, job_id: str):
+        """Run a scheduled job immediately."""
+        from autonomous.scheduler.cron_manager import CronManager
+        from autonomous.scheduler.job_definitions import register_all_jobs
+
+        manager = CronManager()
+        register_all_jobs(manager)
+
+        if manager.run_job(job_id, force=True):
+            print(f"✅ Job {job_id} completed")
+        else:
+            print(f"❌ Job {job_id} failed")
+
+    def daemon_start(self, daemon_type: str):
+        """Start a daemon."""
+        import subprocess
+
+        daemon_map = {
+            "watch": "autonomous/daemons/watch_daemon.py",
+            "health": "autonomous/daemons/health_daemon.py"
+        }
+
+        if daemon_type not in daemon_map:
+            print(f"❌ Unknown daemon type: {daemon_type}")
+            print(f"   Available: {', '.join(daemon_map.keys())}")
+            return
+
+        daemon_path = Path.home() / "akali" / daemon_map[daemon_type]
+        result = subprocess.run(["python3", str(daemon_path), "start"], capture_output=True, text=True)
+
+        print(result.stdout)
+        if result.returncode != 0:
+            print(result.stderr)
+
+    def daemon_stop(self, daemon_type: str):
+        """Stop a daemon."""
+        import subprocess
+
+        daemon_map = {
+            "watch": "autonomous/daemons/watch_daemon.py",
+            "health": "autonomous/daemons/health_daemon.py"
+        }
+
+        if daemon_type not in daemon_map:
+            print(f"❌ Unknown daemon type: {daemon_type}")
+            return
+
+        daemon_path = Path.home() / "akali" / daemon_map[daemon_type]
+        result = subprocess.run(["python3", str(daemon_path), "stop"], capture_output=True, text=True)
+
+        print(result.stdout)
+        if result.returncode != 0:
+            print(result.stderr)
+
+    def daemon_status(self):
+        """Show daemon status."""
+        import subprocess
+
+        daemons = {
+            "watch": "autonomous/daemons/watch_daemon.py",
+            "health": "autonomous/daemons/health_daemon.py"
+        }
+
+        print("\n🥷 Daemon Status\n")
+
+        for name, path in daemons.items():
+            daemon_path = Path.home() / "akali" / path
+            result = subprocess.run(["python3", str(daemon_path), "status"], capture_output=True, text=True)
+            print(f"{name}: {result.stdout.strip()}")
+
+    def alert_send(self, finding_id: str, agent_id: str = None):
+        """Send alert for a finding."""
+        from autonomous.alerts.alert_manager import AlertManager
+
+        manager = AlertManager()
+        alert_id = manager.send_alert(finding_id, force_agent=agent_id)
+
+        if alert_id:
+            print(f"✅ Alert sent: {alert_id}")
+        else:
+            print(f"❌ Failed to send alert for finding: {finding_id}")
+
+    def alert_list(self, pending: bool = False):
+        """List alerts."""
+        from autonomous.alerts.alert_manager import AlertManager
+
+        manager = AlertManager()
+        status = "pending" if pending else None
+        alerts = manager.list_alerts(status=status)
+
+        if not alerts:
+            print("No alerts.")
+        else:
+            print(f"\n📋 Alerts ({len(alerts)}):\n")
+            for alert in alerts:
+                status_emoji = {"pending": "⏳", "sent": "✅", "failed": "❌"}.get(alert["status"], "❓")
+                print(f"{status_emoji} {alert['alert_id']}")
+                print(f"   Finding: {alert['finding_id']}")
+                print(f"   Severity: {alert['severity']}")
+                print(f"   Agent: {alert['agent_id']}")
+                print(f"   Status: {alert['status']}")
+                print()
+
+    def alert_ack(self, alert_id: str):
+        """Acknowledge an alert."""
+        from autonomous.alerts.alert_manager import AlertManager
+
+        manager = AlertManager()
+        if manager.ack_alert(alert_id):
+            print(f"✅ Alert acknowledged: {alert_id}")
+        else:
+            print(f"❌ Alert not found: {alert_id}")
+
+    def triage_finding(self, finding_id: str):
+        """Triage a finding."""
+        from autonomous.triage.triage_engine import TriageEngine
+
+        engine = TriageEngine()
+        result = engine.triage_finding(finding_id)
+
+        if result:
+            print(f"\n📊 Triage Result for {finding_id}:\n")
+            print(f"  Risk Score: {result['risk_score']}")
+            print(f"  Adjusted Severity: {result['adjusted_severity']}")
+            print(f"  Is False Positive: {result['is_false_positive']}")
+            if result.get('false_positive_reason'):
+                print(f"  FP Reason: {result['false_positive_reason']}")
+            if result.get('auto_fix_available'):
+                print(f"  Auto-Fix: {result['auto_fix_command']}")
+        else:
+            print(f"❌ Finding not found: {finding_id}")

@@ -1,0 +1,127 @@
+{
+  "timestamp": "2026-02-19 15:42:50",
+  "tools": {
+    "defensive": [
+      {
+        "name": "gitleaks",
+        "available": true,
+        "version": "gitleaks version 8.30.0",
+        "path": "/usr/local/bin/gitleaks"
+      },
+      {
+        "name": "trufflehog",
+        "available": true,
+        "version": "trufflehog 3.93.4",
+        "path": "/usr/local/bin/trufflehog"
+      },
+      {
+        "name": "npm",
+        "available": true,
+        "version": "10.9.4",
+        "path": "/Users/sevs/.nvm/versions/node/v22.22.0/bin/npm"
+      },
+      {
+        "name": "safety",
+        "available": true,
+        "version": null,
+        "path": "/Library/Frameworks/Python.framework/Versions/3.12/bin/safety"
+      },
+      {
+        "name": "bandit",
+        "available": true,
+        "version": "bandit 1.9.3",
+        "path": "/Library/Frameworks/Python.framework/Versions/3.12/bin/bandit"
+      },
+      {
+        "name": "semgrep",
+        "available": true,
+        "version": "1.152.0",
+        "path": "/usr/local/bin/semgrep"
+      }
+    ],
+    "offensive": [
+      {
+        "name": "nmap",
+        "available": false,
+        "version": null,
+        "path": null
+      },
+      {
+        "name": "nikto",
+        "available": false,
+        "version": null,
+        "path": null
+      },
+      {
+        "name": "sqlmap",
+        "available": false,
+        "version": null,
+        "path": null
+      },
+      {
+        "name": "gobuster",
+        "available": false,
+        "version": null,
+        "path": null
+      },
+      {
+        "name": "testssl.sh",
+        "available": false,
+        "version": null,
+        "path": null
+      },
+      {
+        "name": "ffuf",
+        "available": false,
+        "version": null,
+        "path": null
+      }
+    ],
+    "summary": {
+      "defensive_available": 6,
+      "defensive_total": 6,
+      "offensive_available": 0,
+      "offensive_total": 6
+    }
+  },
+  "database": {
+    "healthy": true,
+    "issues": [],
+    "stats": {
+      "total": 2,
+      "by_status": {
+        "open": 2
+      },
+      "by_severity": {
+        "critical": 1,
+        "high": 1
+      },
+      "by_scanner": {
+        "nuclei": 1,
+        "secrets": 1
+      }
+    }
+  },
+  "disk": {
+    "healthy": false,
+    "level": "critical",
+    "issues": [
+      "Critical: Only 4.0% disk space free (< 5%)"
+    ],
+    "usage": {
+      "total_gb": 233.47,
+      "used_gb": 224.18,
+      "free_gb": 9.29,
+      "percent_free": 3.98
+    }
+  },
+  "zim_memory": {
+    "healthy": false,
+    "reachable": false,
+    "response_time_ms": null,
+    "issues": [
+      "ZimMemory request timed out"
+    ]
+  },
+  "last_updated": "2026-02-19T15:43:10.907404"
+}

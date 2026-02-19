@@ -75,6 +75,45 @@ For more help: https://github.com/sevs/akali
     exploit_parser = subparsers.add_parser("exploit", help="Look up CVE and exploit information")
     exploit_parser.add_argument("cve_id", help="CVE identifier (e.g., CVE-2021-44228)")
 
+    # Schedule command (autonomous)
+    schedule_parser = subparsers.add_parser("schedule", help="Manage scheduled jobs")
+    schedule_subparsers = schedule_parser.add_subparsers(dest="schedule_command")
+
+    schedule_subparsers.add_parser("list", help="List scheduled jobs")
+
+    schedule_run_parser = schedule_subparsers.add_parser("run", help="Run a job immediately")
+    schedule_run_parser.add_argument("job_id", help="Job ID to run")
+
+    # Daemon command (autonomous)
+    daemon_parser = subparsers.add_parser("daemon", help="Manage autonomous daemons")
+    daemon_subparsers = daemon_parser.add_subparsers(dest="daemon_command")
+
+    daemon_start_parser = daemon_subparsers.add_parser("start", help="Start a daemon")
+    daemon_start_parser.add_argument("type", choices=["watch", "health"], help="Daemon type")
+
+    daemon_stop_parser = daemon_subparsers.add_parser("stop", help="Stop a daemon")
+    daemon_stop_parser.add_argument("type", choices=["watch", "health"], help="Daemon type")
+
+    daemon_subparsers.add_parser("status", help="Show daemon status")
+
+    # Alert command (autonomous)
+    alert_parser = subparsers.add_parser("alert", help="Manage alerts")
+    alert_subparsers = alert_parser.add_subparsers(dest="alert_command")
+
+    alert_send_parser = alert_subparsers.add_parser("send", help="Send alert for a finding")
+    alert_send_parser.add_argument("finding_id", help="Finding ID")
+    alert_send_parser.add_argument("--agent", help="Override agent ID")
+
+    alert_list_parser = alert_subparsers.add_parser("list", help="List alerts")
+    alert_list_parser.add_argument("--pending", action="store_true", help="Show only pending alerts")
+
+    alert_ack_parser = alert_subparsers.add_parser("ack", help="Acknowledge an alert")
+    alert_ack_parser.add_argument("alert_id", help="Alert ID")
+
+    # Triage command (autonomous)
+    triage_parser = subparsers.add_parser("triage", help="Automated triage")
+    triage_parser.add_argument("finding_id", help="Finding ID to triage")
+
     # Status command
     subparsers.add_parser("status", help="Show Akali status")
 
@@ -165,6 +204,37 @@ For more help: https://github.com/sevs/akali
 
         elif args.command == "exploit":
             cli.exploit(args.cve_id)
+
+        elif args.command == "schedule":
+            if args.schedule_command == "list":
+                cli.schedule_list()
+            elif args.schedule_command == "run":
+                cli.schedule_run(args.job_id)
+            else:
+                schedule_parser.print_help()
+
+        elif args.command == "daemon":
+            if args.daemon_command == "start":
+                cli.daemon_start(args.type)
+            elif args.daemon_command == "stop":
+                cli.daemon_stop(args.type)
+            elif args.daemon_command == "status":
+                cli.daemon_status()
+            else:
+                daemon_parser.print_help()
+
+        elif args.command == "alert":
+            if args.alert_command == "send":
+                cli.alert_send(args.finding_id, agent_id=args.agent if hasattr(args, 'agent') else None)
+            elif args.alert_command == "list":
+                cli.alert_list(pending=args.pending)
+            elif args.alert_command == "ack":
+                cli.alert_ack(args.alert_id)
+            else:
+                alert_parser.print_help()
+
+        elif args.command == "triage":
+            cli.triage_finding(args.finding_id)
 
         elif args.command == "status":
             cli.status()

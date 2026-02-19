@@ -1,3 +1,39 @@
 {
-  "findings": []
+  "findings": [
+    {
+      "id": "test-finding-001",
+      "title": "SQL Injection Vulnerability",
+      "description": "Potential SQL injection in login endpoint",
+      "severity": "critical",
+      "scanner": "nuclei",
+      "target": "app.goumuve.com",
+      "status": "open",
+      "created_at": "2026-02-19T10:00:00"
+    },
+    {
+      "id": "test-finding-002",
+      "title": "Exposed API Key",
+      "description": "API key found in source code",
+      "severity": "high",
+      "scanner": "secrets",
+      "target": "github.com/user/repo",
+      "status": "open",
+      "created_at": "2026-02-19T11:00:00"
+    },
+    {
+      "id": "demo-vul-001",
+      "title": "Authentication Bypass Vulnerability",
+      "description": "Critical authentication bypass found in OAuth callback handler. Improper validation of state parameter allows session fixation attacks.",
+      "severity": "critical",
+      "scanner": "manual",
+      "target": "api.goumuve.com",
+      "file_path": "/api/oauth/callback.py",
+      "line_number": 156,
+      "status": "open",
+      "remediation": "1. Validate state parameter against server-side session\n2. Implement CSRF token validation\n3. Add rate limiting to OAuth endpoints\n4. Log all authentication attempts",
+      "cvss_score": 9.1,
+      "cwe_id": "CWE-287",
+      "created_at": "2026-02-19T15:00:00"
+    }
+  ]
 }

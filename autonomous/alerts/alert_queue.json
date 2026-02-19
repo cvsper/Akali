@@ -1,0 +1,74 @@
+{
+  "alerts": [
+    {
+      "id": "alert-20260219154200-b3b0k4",
+      "finding_id": "test-finding-001",
+      "severity": "critical",
+      "title": "SQL Injection Vulnerability",
+      "description": "Potential SQL injection in login endpoint",
+      "scanner": "nuclei",
+      "target": "app.goumuve.com",
+      "created_at": "2026-02-19T15:42:00.917480",
+      "status": "acknowledged",
+      "sent_at": null,
+      "acknowledged_at": "2026-02-19T15:42:00.918722",
+      "escalated_at": null,
+      "agent_id": "dommo",
+      "retry_count": 0
+    },
+    {
+      "id": "alert-20260219154200-1d07dd",
+      "finding_id": "test-finding-001",
+      "severity": "critical",
+      "title": "SQL Injection Vulnerability",
+      "description": "Potential SQL injection in login endpoint",
+      "scanner": "nuclei",
+      "target": "app.goumuve.com",
+      "created_at": "2026-02-19T15:42:00.918284",
+      "status": "pending",
+      "sent_at": null,
+      "acknowledged_at": null,
+      "escalated_at": null,
+      "agent_id": "dommo",
+      "retry_count": 0
+    },
+    {
+      "id": "alert-20260219154210-ypwk4j",
+      "finding_id": "test-finding-002",
+      "severity": "high",
+      "title": "Exposed API Key",
+      "description": "API key found in source code",
+      "scanner": "secrets",
+      "target": "github.com/user/repo",
+      "created_at": "2026-02-19T15:42:10.938558",
+      "status": "pending",
+      "sent_at": null,
+      "acknowledged_at": null,
+      "escalated_at": null,
+      "agent_id": "akali",
+      "retry_count": 0
+    },
+    {
+      "id": "alert-20260219154443-q2h5f1",
+      "finding_id": "demo-vul-001",
+      "severity": "critical",
+      "title": "Authentication Bypass Vulnerability",
+      "description": "Critical authentication bypass found in OAuth callback handler. Improper validation of state parameter allows session fixation attacks.",
+      "scanner": "manual",
+      "target": "api.goumuve.com",
+      "created_at": "2026-02-19T15:44:43.691972",
+      "status": "pending",
+      "sent_at": null,
+      "acknowledged_at": null,
+      "escalated_at": null,
+      "agent_id": "akali",
+      "retry_count": 0
+    }
+  ],
+  "history": [],
+  "stats": {
+    "total_sent": 0,
+    "total_acknowledged": 1,
+    "total_escalated": 0
+  }
+}
