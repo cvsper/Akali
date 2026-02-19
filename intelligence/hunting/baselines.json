@@ -1,0 +1,12 @@
+{
+  "api_requests_per_hour_alice@example.com": {
+    "metric_name": "api_requests_per_hour_alice@example.com",
+    "sample_count": 10,
+    "mean": 50.8,
+    "stddev": 2.250925735484551,
+    "min": 48,
+    "max": 55,
+    "percentile_95": 55,
+    "last_updated": "2026-02-19T17:14:56.617212"
+  }
+}

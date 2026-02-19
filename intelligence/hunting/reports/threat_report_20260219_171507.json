@@ -1,0 +1,54 @@
+{
+  "title": "Threat Hunting Report",
+  "generated_at": "2026-02-19T17:15:07.362350",
+  "metadata": {
+    "scan_start": "2026-02-19T10:00:00Z",
+    "scan_end": "2026-02-19T12:00:00Z",
+    "events_analyzed": 50000,
+    "sources": [
+      "firewall_logs",
+      "auth_logs",
+      "network_flow"
+    ]
+  },
+  "findings": [
+    {
+      "type": "credential_stuffing",
+      "severity": "critical",
+      "source_ip": "203.0.113.10",
+      "failed_attempts": 150,
+      "unique_users_targeted": 45,
+      "description": "Credential stuffing attack detected from 203.0.113.10"
+    },
+    {
+      "type": "large_data_exfil",
+      "severity": "high",
+      "source_ip": "10.0.0.100",
+      "total_mb": 250.5,
+      "description": "Large data transfer detected: 250.5 MB uploaded"
+    },
+    {
+      "type": "lateral_movement",
+      "severity": "critical",
+      "user": "admin",
+      "hop_count": 7,
+      "description": "Lateral movement detected: admin account accessed 7 hosts"
+    }
+  ],
+  "statistics": {
+    "total_findings": 3,
+    "by_severity": {
+      "critical": 2,
+      "high": 1
+    },
+    "by_type": {
+      "credential_stuffing": 1,
+      "large_data_exfil": 1,
+      "lateral_movement": 1
+    },
+    "critical_count": 2,
+    "high_count": 1,
+    "medium_count": 0,
+    "low_count": 0
+  }
+}

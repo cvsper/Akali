@@ -1,0 +1,91 @@
+{
+  "iocs": [
+    {
+      "type": "ip",
+      "value": "192.168.1.100",
+      "source": "internal_logs",
+      "confidence": 0.8,
+      "tags": [
+        "c2",
+        "malware"
+      ],
+      "first_seen": "2026-02-19T17:15:02.698642",
+      "last_seen": "2026-02-19T17:15:02.698658",
+      "occurrences": 1,
+      "related_iocs": [
+        "domain:evil.example.com"
+      ],
+      "metadata": {}
+    },
+    {
+      "type": "domain",
+      "value": "evil.example.com",
+      "source": "threat_feed",
+      "confidence": 0.9,
+      "tags": [
+        "phishing"
+      ],
+      "first_seen": "2026-02-19T17:15:02.698986",
+      "last_seen": "2026-02-19T17:15:02.698991",
+      "occurrences": 1,
+      "related_iocs": [
+        "ip:192.168.1.100",
+        "hash:d41d8cd98f00b204e9800998ecf8427e"
+      ],
+      "metadata": {}
+    },
+    {
+      "type": "hash",
+      "value": "d41d8cd98f00b204e9800998ecf8427e",
+      "source": "virustotal",
+      "confidence": 0.95,
+      "tags": [
+        "malware",
+        "trojan"
+      ],
+      "first_seen": "2026-02-19T17:15:02.699228",
+      "last_seen": "2026-02-19T17:15:02.699232",
+      "occurrences": 1,
+      "related_iocs": [
+        "domain:evil.example.com"
+      ],
+      "metadata": {}
+    },
+    {
+      "type": "ip",
+      "value": "10.0.0.50",
+      "source": "firewall_logs",
+      "confidence": 0.6,
+      "tags": [
+        "suspicious"
+      ],
+      "first_seen": "2026-02-19T17:15:02.699738",
+      "last_seen": "2026-02-19T17:15:02.699746",
+      "occurrences": 1,
+      "related_iocs": [],
+      "metadata": {}
+    }
+  ],
+  "relationships": [
+    {
+      "from": "ip:192.168.1.100",
+      "to": [
+        "domain:evil.example.com"
+      ]
+    },
+    {
+      "from": "domain:evil.example.com",
+      "to": [
+        "ip:192.168.1.100",
+        "hash:d41d8cd98f00b204e9800998ecf8427e"
+      ]
+    },
+    {
+      "from": "hash:d41d8cd98f00b204e9800998ecf8427e",
+      "to": [
+        "domain:evil.example.com"
+      ]
+    }
+  ],
+  "last_updated": "2026-02-19T17:15:02.700324"
+}
