@@ -1,5 +1,6 @@
 import zipfile
 import shutil
+import plistlib
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
@@ -9,6 +10,13 @@ class ExtractionResult:
     success: bool
     app_dir: Path
     error: Optional[str] = None
+
+@dataclass
+class IOSPlist:
+    bundle_id: str
+    version: str
+    permissions: dict[str, str]
+    ats_exceptions: bool
 
 class IPAAnalyzer:
     """iOS IPA static analysis"""
@@ -51,3 +59,31 @@ class IPAAnalyzer:
                 app_dir=output_dir,
                 error=str(e)
             )
+
+    def parse_plist(self, plist_path: Path) -> IOSPlist:
+        """Parse Info.plist"""
+        with open(plist_path, 'rb') as f:
+            plist_data = plistlib.load(f)
+
+        # Extract bundle ID
+        bundle_id = plist_data.get('CFBundleIdentifier', '')
+
+        # Extract version
+        version = plist_data.get('CFBundleShortVersionString', '0.0.0')
+
+        # Extract permissions (usage descriptions)
+        permissions = {}
+        for key, value in plist_data.items():
+            if 'UsageDescription' in key:
+                permissions[key] = value
+
+        # Check for ATS exceptions
+        ats_settings = plist_data.get('NSAppTransportSecurity', {})
+        ats_exceptions = ats_settings.get('NSAllowsArbitraryLoads', False)
+
+        return IOSPlist(
+            bundle_id=bundle_id,
+            version=version,
+            permissions=permissions,
+            ats_exceptions=ats_exceptions
+        )

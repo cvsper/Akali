@@ -12,3 +12,14 @@ def test_ipa_extraction():
     assert result.success is True
     assert result.app_dir.exists()
     assert (result.app_dir / "Info.plist").exists()
+
+def test_parse_plist():
+    """Test Info.plist parsing"""
+    analyzer = IPAAnalyzer()
+    plist_path = Path("tests/fixtures/Info.plist")
+
+    plist = analyzer.parse_plist(plist_path)
+
+    assert plist.bundle_id is not None
+    assert isinstance(plist.permissions, dict)
+    assert plist.version is not None
