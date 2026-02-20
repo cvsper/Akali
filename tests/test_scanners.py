@@ -1,13 +1,8 @@
 """Tests for Akali scanners."""
 
-import sys
-from pathlib import Path
-
-sys.path.append(str(Path.home() / "akali" / "defensive" / "scanners"))
-
-from secrets_scanner import SecretsScanner
-from dependency_scanner import DependencyScanner
-from sast_scanner import SASTScanner
+from defensive.scanners.secrets_scanner import SecretsScanner
+from defensive.scanners.dependency_scanner import DependencyScanner
+from defensive.scanners.sast_scanner import SASTScanner
 
 
 def test_secrets_scanner_available():
