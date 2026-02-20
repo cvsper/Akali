@@ -78,3 +78,27 @@ class WiFiScanner:
             return networks
         except Exception:
             return []
+
+    def detect_wpa_handshake(self, pcap_path) -> bool:
+        """Detect WPA handshake in pcap file"""
+        try:
+            # Use aircrack-ng to detect handshake
+            cmd = ['aircrack-ng', str(pcap_path)]
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+
+            # Check for handshake indicators in output
+            output = result.stdout + result.stderr
+            has_handshake = (
+                'handshake' in output.lower() or
+                'WPA (1 handshake)' in output or
+                'WPA (2 handshakes)' in output
+            )
+
+            return has_handshake
+        except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+            return False

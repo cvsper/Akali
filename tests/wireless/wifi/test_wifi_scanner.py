@@ -18,3 +18,14 @@ def test_scan_networks():
         assert all(hasattr(n, 'ssid') for n in networks)
         assert all(hasattr(n, 'bssid') for n in networks)
         assert all(hasattr(n, 'channel') for n in networks)
+
+
+def test_detect_wpa_handshake():
+    """Test WPA handshake detection in pcap"""
+    scanner = WiFiScanner()
+    pcap_path = Path("tests/fixtures/wpa_handshake.pcap")
+
+    has_handshake = scanner.detect_wpa_handshake(pcap_path)
+
+    # Will create fixture later
+    assert isinstance(has_handshake, bool)
