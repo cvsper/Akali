@@ -1,6 +1,7 @@
 """Akali CLI interface logic."""
 
 import sys
+import time
 from pathlib import Path
 from typing import List, Optional
 from ascii_art import (
@@ -1535,3 +1536,108 @@ class AkaliCLI:
 
         cli = HuntCLI()
         cli.show_stats()
+
+    # Phase 7: Mobile + C2 Commands
+    def mobile_static(self, target: str, platform: str = 'android'):
+        """Run static analysis on mobile app"""
+        if platform == 'android':
+            from mobile.static.apk_analyzer import APKAnalyzer
+            analyzer = APKAnalyzer()
+
+            print(f"[*] Analyzing {target}")
+            result = analyzer.decompile(Path(target))
+
+            if not result.success:
+                print(f"[!] Decompilation failed: {result.error}")
+                return
+
+            print(f"[+] Decompiled to: {result.output_dir}")
+
+            # Parse manifest
+            manifest_path = result.output_dir / "AndroidManifest.xml"
+            if manifest_path.exists():
+                manifest = analyzer.parse_manifest(manifest_path)
+
+                print(f"\n[*] Package: {manifest.package_name}")
+                print(f"[*] Min SDK: {manifest.min_sdk_version}")
+                print(f"[*] Debuggable: {manifest.debuggable}")
+                print(f"[*] Permissions: {len(manifest.permissions)}")
+
+                for perm in manifest.permissions[:10]:
+                    print(f"    - {perm}")
+
+            # Find secrets
+            print("\n[*] Scanning for hardcoded secrets...")
+            secrets = analyzer.find_secrets(result.output_dir)
+
+            if secrets:
+                print(f"[!] Found {len(secrets)} secrets:")
+                for secret in secrets[:10]:
+                    print(f"    [{secret.severity}] {secret.type} in {secret.file_path.name}:{secret.line_number}")
+            else:
+                print("[+] No hardcoded secrets found")
+
+        elif platform == 'ios':
+            from mobile.static.ipa_analyzer import IPAAnalyzer
+            analyzer = IPAAnalyzer()
+
+            print(f"[*] Extracting {target}")
+            result = analyzer.extract(Path(target))
+
+            if not result.success:
+                print(f"[!] Extraction failed: {result.error}")
+                return
+
+            print(f"[+] Extracted to: {result.app_dir}")
+
+            # Parse plist
+            plist_path = result.app_dir / "Info.plist"
+            if plist_path.exists():
+                plist = analyzer.parse_plist(plist_path)
+
+                print(f"\n[*] Bundle ID: {plist.bundle_id}")
+                print(f"[*] Version: {plist.version}")
+                print(f"[*] ATS Exceptions: {plist.ats_exceptions}")
+                print(f"[*] Permissions: {len(plist.permissions)}")
+
+                for key, desc in plist.permissions.items():
+                    print(f"    - {key}: {desc}")
+
+    def c2_agent_list(self):
+        """List C2 agents"""
+        from redteam.c2.commander import C2Commander
+        commander = C2Commander()
+
+        agents = commander.list_agents()
+
+        if not agents:
+            print("No agents registered")
+            return
+
+        print(f"\n[*] {len(agents)} agents:")
+        for agent in agents:
+            status = "🟢" if agent.last_seen > time.time() - 60 else "🔴"
+            print(f"{status} {agent.id} - {agent.hostname} ({agent.platform})")
+
+    def c2_task_send(self, agent_id: str, command: str, args: str = ""):
+        """Send task to agent"""
+        from redteam.c2.commander import C2Commander
+        commander = C2Commander()
+
+        task_id = commander.send_task(agent_id, command, args)
+        print(f"[+] Task {task_id} sent to {agent_id}")
+
+    def redteam_campaign_create(self, name: str, target: str, mode: str, template: str = "mobile-test"):
+        """Create campaign"""
+        from redteam.campaigns.orchestrator import CampaignOrchestrator
+        orchestrator = CampaignOrchestrator()
+
+        campaign_id = orchestrator.create_campaign(name, target, mode, template)
+        print(f"[+] Campaign '{name}' created with ID: {campaign_id}")
+
+    def redteam_campaign_run(self, campaign_id: str):
+        """Run campaign"""
+        from redteam.campaigns.orchestrator import CampaignOrchestrator
+        orchestrator = CampaignOrchestrator()
+
+        orchestrator.run_campaign(campaign_id)
