@@ -12,3 +12,14 @@ def test_apk_decompilation():
     assert result.success is True
     assert result.output_dir.exists()
     assert (result.output_dir / "AndroidManifest.xml").exists()
+
+def test_parse_manifest():
+    """Test AndroidManifest.xml parsing"""
+    analyzer = APKAnalyzer()
+    manifest_path = Path("tests/fixtures/AndroidManifest.xml")
+
+    manifest = analyzer.parse_manifest(manifest_path)
+
+    assert manifest.package_name is not None
+    assert isinstance(manifest.permissions, list)
+    assert manifest.min_sdk_version is not None
