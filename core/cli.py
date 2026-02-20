@@ -26,6 +26,10 @@ from network_scanner import NetworkScanner
 from api_scanner import APIScanner
 from exploit_scanner import ExploitScanner
 
+# Python-based fallback scanners (no external tools required)
+from python_web_scanner import PythonWebScanner
+from python_network_scanner import PythonNetworkScanner
+
 # Incident response modules
 from incident.incidents.incident_tracker import IncidentTracker
 from incident.war_room.war_room_commander import WarRoomCommander
@@ -48,6 +52,11 @@ class AkaliCLI:
             "network": NetworkScanner(),
             "api": APIScanner(),
             "exploit": ExploitScanner()
+        }
+        # Python-based fallback scanners
+        self.python_scanners = {
+            "web": PythonWebScanner(),
+            "network": PythonNetworkScanner()
         }
         # Incident response
         self.incident_tracker = IncidentTracker()
@@ -222,7 +231,15 @@ class AkaliCLI:
                 except Exception as e:
                     print(f"   ❌ Web scan error: {e}")
             else:
-                print("   ⚠️  Web scanner not available (tools not installed)")
+                print("   ⚠️  External tools not available, using Python-based scanner...")
+                python_scanner = self.python_scanners["web"]
+                try:
+                    findings = python_scanner.scan(target, quick=quick)
+                    all_findings.extend(findings)
+                    if findings:
+                        self.db.add_findings([f.to_dict() for f in findings])
+                except Exception as e:
+                    print(f"   ❌ Python scanner error: {e}")
 
         if attack_type in ["network", "full"]:
             print("\n🌐 Running network scan...")
@@ -236,7 +253,15 @@ class AkaliCLI:
                 except Exception as e:
                     print(f"   ❌ Network scan error: {e}")
             else:
-                print("   ⚠️  Network scanner not available (tools not installed)")
+                print("   ⚠️  External tools not available, using Python-based scanner...")
+                python_scanner = self.python_scanners["network"]
+                try:
+                    findings = python_scanner.scan(target, quick=quick, ports=kwargs.get("ports"))
+                    all_findings.extend(findings)
+                    if findings:
+                        self.db.add_findings([f.to_dict() for f in findings])
+                except Exception as e:
+                    print(f"   ❌ Python scanner error: {e}")
 
         if attack_type in ["api", "full"]:
             print("\n🔌 Running API scan...")
