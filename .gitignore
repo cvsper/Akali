@@ -55,3 +55,7 @@ secrets/
 .pytest_cache/
 .coverage
 htmlcov/
+__pycache__/
+*.pyc
+*.pyo
+__pycache__/
