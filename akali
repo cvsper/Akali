@@ -413,6 +413,57 @@ For more help: https://github.com/sevs/akali
     campaign_run_parser = campaign_subparsers.add_parser("run", help="Run campaign")
     campaign_run_parser.add_argument("campaign_id", help="Campaign ID")
 
+    # Phase 8: Wireless security commands
+    wireless_parser = subparsers.add_parser("wireless", help="Wireless security testing")
+    wireless_subparsers = wireless_parser.add_subparsers(dest="wireless_command")
+
+    wireless_wifi_parser = wireless_subparsers.add_parser("wifi", help="WiFi security")
+    wireless_wifi_subparsers = wireless_wifi_parser.add_subparsers(dest="wifi_action")
+
+    wireless_wifi_subparsers.add_parser("scan", help="Scan for WiFi networks")
+
+    wifi_analyze_parser = wireless_wifi_subparsers.add_parser("analyze", help="Analyze WiFi pcap")
+    wifi_analyze_parser.add_argument("pcap_file", help="Path to pcap file")
+
+    wireless_ble_parser = wireless_subparsers.add_parser("ble", help="Bluetooth Low Energy")
+    wireless_ble_subparsers = wireless_ble_parser.add_subparsers(dest="ble_action")
+
+    ble_scan_parser = wireless_ble_subparsers.add_parser("scan", help="Scan for BLE devices")
+    ble_scan_parser.add_argument("--timeout", type=int, default=10, help="Scan timeout (seconds)")
+
+    # Phase 8: IoT security commands
+    iot_parser = subparsers.add_parser("iot", help="IoT security testing")
+    iot_subparsers = iot_parser.add_subparsers(dest="iot_command")
+
+    iot_scan_parser = iot_subparsers.add_parser("scan", help="Scan network for IoT devices")
+    iot_scan_parser.add_argument("network", help="Network to scan (e.g., 192.168.1.0/24)")
+    iot_scan_parser.add_argument("--timeout", type=int, default=30, help="Scan timeout (seconds)")
+
+    iot_mqtt_parser = iot_subparsers.add_parser("mqtt", help="MQTT protocol testing")
+    iot_mqtt_subparsers = iot_mqtt_parser.add_subparsers(dest="mqtt_action")
+
+    mqtt_probe_parser = iot_mqtt_subparsers.add_parser("probe", help="Probe MQTT broker")
+    mqtt_probe_parser.add_argument("host", help="MQTT broker hostname/IP")
+    mqtt_probe_parser.add_argument("--port", type=int, default=1883, help="MQTT port")
+    mqtt_probe_parser.add_argument("--timeout", type=int, default=5, help="Connection timeout")
+
+    iot_coap_parser = iot_subparsers.add_parser("coap", help="CoAP protocol testing")
+    iot_coap_subparsers = iot_coap_parser.add_subparsers(dest="coap_action")
+
+    coap_probe_parser = iot_coap_subparsers.add_parser("probe", help="Probe CoAP server")
+    coap_probe_parser.add_argument("host", help="CoAP server hostname/IP")
+    coap_probe_parser.add_argument("--port", type=int, default=5683, help="CoAP port")
+    coap_probe_parser.add_argument("--timeout", type=int, default=5, help="Connection timeout")
+
+    iot_firmware_parser = iot_subparsers.add_parser("firmware", help="Firmware analysis")
+    iot_firmware_subparsers = iot_firmware_parser.add_subparsers(dest="firmware_action")
+
+    firmware_extract_parser = iot_firmware_subparsers.add_parser("extract", help="Extract firmware")
+    firmware_extract_parser.add_argument("firmware_file", help="Path to firmware file")
+
+    firmware_scan_parser = iot_firmware_subparsers.add_parser("scan", help="Scan firmware for secrets")
+    firmware_scan_parser.add_argument("firmware_path", help="Path to extracted firmware directory")
+
     # Status command
     subparsers.add_parser("status", help="Show Akali status")
 
@@ -771,6 +822,53 @@ For more help: https://github.com/sevs/akali
                     campaign_parser.print_help()
             else:
                 redteam_parser.print_help()
+
+        # Phase 8: Wireless security commands
+        elif args.command == "wireless":
+            if args.wireless_command == "wifi":
+                if args.wifi_action == "scan":
+                    cli.wireless_wifi_scan()
+                elif args.wifi_action == "analyze":
+                    cli.wireless_wifi_analyze(args.pcap_file)
+                else:
+                    wireless_wifi_parser.print_help()
+
+            elif args.wireless_command == "ble":
+                if args.ble_action == "scan":
+                    cli.wireless_ble_scan(timeout=args.timeout)
+                else:
+                    wireless_ble_parser.print_help()
+
+            else:
+                wireless_parser.print_help()
+
+        # Phase 8: IoT security commands
+        elif args.command == "iot":
+            if args.iot_command == "scan":
+                cli.iot_scan(args.network, timeout=args.timeout)
+
+            elif args.iot_command == "mqtt":
+                if args.mqtt_action == "probe":
+                    cli.iot_mqtt_probe(args.host, port=args.port, timeout=args.timeout)
+                else:
+                    iot_mqtt_parser.print_help()
+
+            elif args.iot_command == "coap":
+                if args.coap_action == "probe":
+                    cli.iot_coap_probe(args.host, port=args.port, timeout=args.timeout)
+                else:
+                    iot_coap_parser.print_help()
+
+            elif args.iot_command == "firmware":
+                if args.firmware_action == "extract":
+                    cli.iot_firmware_extract(args.firmware_file)
+                elif args.firmware_action == "scan":
+                    cli.iot_firmware_scan(args.firmware_path)
+                else:
+                    iot_firmware_parser.print_help()
+
+            else:
+                iot_parser.print_help()
 
         elif args.command == "status":
             cli.status()

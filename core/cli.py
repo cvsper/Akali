@@ -1641,3 +1641,194 @@ class AkaliCLI:
         orchestrator = CampaignOrchestrator()
 
         orchestrator.run_campaign(campaign_id)
+
+    # Phase 8: Wireless + IoT Commands
+
+    def wireless_wifi_scan(self):
+        """Scan for WiFi networks"""
+        from wireless.wifi.wifi_scanner import WiFiScanner
+
+        scanner = WiFiScanner()
+        networks = scanner.scan_networks()
+
+        if not networks:
+            print("No WiFi networks found (or no wireless interface detected)")
+            return
+
+        print(f"\n[*] Found {len(networks)} networks:\n")
+        for net in networks:
+            security_emoji = "🔒" if "WPA" in net.encryption else "🔓"
+            print(f"{security_emoji} {net.ssid}")
+            print(f"   BSSID: {net.bssid}")
+            print(f"   Channel: {net.channel} | Signal: {net.signal_strength} dBm")
+            print(f"   Encryption: {net.encryption}")
+            print()
+
+    def wireless_ble_scan(self, timeout: int = 10):
+        """Scan for BLE devices"""
+        from wireless.bluetooth.ble_scanner import BLEScanner
+
+        scanner = BLEScanner()
+        print(f"[*] Scanning for BLE devices (timeout: {timeout}s)...")
+        devices = scanner.scan_devices(timeout=timeout)
+
+        if not devices:
+            print("No BLE devices found")
+            return
+
+        print(f"\n[*] Found {len(devices)} devices:\n")
+        for dev in devices:
+            print(f"📱 {dev.name or 'Unknown'}")
+            print(f"   Address: {dev.address}")
+            if dev.rssi:
+                print(f"   RSSI: {dev.rssi} dBm")
+            if dev.manufacturer:
+                print(f"   Manufacturer: {dev.manufacturer}")
+            print()
+
+    def wireless_wifi_analyze(self, pcap_file: str):
+        """Analyze WiFi pcap for security issues"""
+        from wireless.wifi.wifi_scanner import WiFiScanner
+        from wireless.wifi.deauth_detector import DeauthDetector
+        from pathlib import Path
+
+        pcap_path = Path(pcap_file)
+        if not pcap_path.exists():
+            print(f"❌ File not found: {pcap_file}")
+            return
+
+        # Check for WPA handshake
+        scanner = WiFiScanner()
+        has_handshake = scanner.detect_wpa_handshake(pcap_path)
+        print(f"\n[*] WPA Handshake: {'✅ Detected' if has_handshake else '❌ Not found'}")
+
+        # Check for deauth attacks
+        detector = DeauthDetector()
+        result = detector.detect_deauth_frames(pcap_path)
+
+        severity_emoji = {'low': '🟢', 'medium': '🟡', 'high': '🔴'}.get(result.get('severity', 'low'), '⚪')
+        print(f"\n[*] Deauth Frames: {result['deauth_count']}")
+        print(f"{severity_emoji} Suspicious: {'Yes' if result['suspicious'] else 'No'} (Severity: {result['severity']})")
+
+    def iot_scan(self, network: str, timeout: int = 30):
+        """Scan network for IoT devices"""
+        from iot.device.scanner import IoTScanner
+
+        scanner = IoTScanner()
+        print(f"[*] Scanning {network} for IoT devices...")
+        devices = scanner.scan_network(network, timeout=timeout)
+
+        if not devices:
+            print("No devices found")
+            return
+
+        print(f"\n[*] Found {len(devices)} devices:\n")
+        for dev in devices:
+            print(f"🖥️  {dev.ip}")
+            if dev.hostname:
+                print(f"   Hostname: {dev.hostname}")
+            if dev.mac:
+                print(f"   MAC: {dev.mac}")
+            if dev.vendor:
+                print(f"   Vendor: {dev.vendor}")
+            print()
+
+    def iot_mqtt_probe(self, host: str, port: int = 1883, timeout: int = 5):
+        """Probe MQTT broker"""
+        from iot.protocol.mqtt_analyzer import MQTTAnalyzer
+
+        analyzer = MQTTAnalyzer()
+        print(f"[*] Probing MQTT broker at {host}:{port}...")
+
+        result = analyzer.probe_broker(host, port, timeout)
+
+        status_emoji = "✅" if result['accessible'] else "❌"
+        print(f"\n{status_emoji} Broker: {'Accessible' if result['accessible'] else 'Not accessible'}")
+
+        if result['accessible']:
+            anon_emoji = "⚠️" if result['anonymous_allowed'] else "🔒"
+            print(f"{anon_emoji} Anonymous Access: {'Allowed' if result['anonymous_allowed'] else 'Denied'}")
+
+            # Try to enumerate topics
+            topics = analyzer.enumerate_topics(host, port, timeout)
+            if topics:
+                print(f"\n[*] Discovered Topics ({len(topics)}):")
+                for topic in topics[:10]:
+                    print(f"   • {topic}")
+
+    def iot_coap_probe(self, host: str, port: int = 5683, timeout: int = 5):
+        """Probe CoAP server"""
+        from iot.protocol.coap_analyzer import CoAPAnalyzer
+
+        analyzer = CoAPAnalyzer()
+        print(f"[*] Probing CoAP server at {host}:{port}...")
+
+        result = analyzer.probe_server(host, port, timeout)
+
+        status_emoji = "✅" if result['accessible'] else "❌"
+        print(f"\n{status_emoji} Server: {'Accessible' if result['accessible'] else 'Not accessible'}")
+        print(f"   Protocol: {result['protocol']}")
+
+        if result['accessible']:
+            anon_emoji = "⚠️" if result['anonymous_allowed'] else "🔒"
+            print(f"{anon_emoji} Anonymous Access: {'Allowed' if result['anonymous_allowed'] else 'Denied'}")
+
+            # Try to discover resources
+            resources = analyzer.discover_resources(host, port, timeout)
+            if resources:
+                print(f"\n[*] Discovered Resources ({len(resources)}):")
+                for resource in resources[:10]:
+                    print(f"   • {resource}")
+
+    def iot_firmware_extract(self, firmware_file: str):
+        """Extract IoT firmware"""
+        from iot.firmware.extractor import FirmwareExtractor
+        from pathlib import Path
+
+        extractor = FirmwareExtractor()
+        firmware_path = Path(firmware_file)
+
+        if not firmware_path.exists():
+            print(f"❌ File not found: {firmware_file}")
+            return
+
+        print(f"[*] Extracting firmware: {firmware_file}")
+        result = extractor.extract_firmware(firmware_path)
+
+        if not result['success']:
+            print(f"❌ Extraction failed: {result.get('error', 'Unknown error')}")
+            return
+
+        print(f"✅ Extraction successful")
+        print(f"   Output: {result['output_dir']}")
+
+        if result['filesystems']:
+            print(f"\n[*] Detected Filesystems ({len(result['filesystems'])}):")
+            for fs in result['filesystems']:
+                print(f"   • {fs}")
+
+    def iot_firmware_scan(self, firmware_path: str):
+        """Scan firmware for secrets"""
+        from iot.firmware.extractor import FirmwareExtractor
+        from pathlib import Path
+
+        extractor = FirmwareExtractor()
+        path = Path(firmware_path)
+
+        if not path.exists():
+            print(f"❌ Path not found: {firmware_path}")
+            return
+
+        print(f"[*] Scanning {firmware_path} for secrets...")
+        secrets = extractor.scan_secrets(path)
+
+        if not secrets:
+            print("✅ No secrets found")
+            return
+
+        print(f"\n⚠️  Found {len(secrets)} secrets:\n")
+        for secret in secrets[:20]:
+            print(f"  [{secret['type']}] {secret['match']}")
+
+        if len(secrets) > 20:
+            print(f"\n... and {len(secrets) - 20} more secrets")
