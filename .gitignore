@@ -59,3 +59,4 @@ __pycache__/
 *.pyc
 *.pyo
 __pycache__/
+.worktrees/
