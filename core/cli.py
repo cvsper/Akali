@@ -37,6 +37,15 @@ from incident.war_room.war_room_commander import WarRoomCommander
 from incident.playbooks.playbook_engine import PlaybookEngine
 from incident.incidents.post_mortem import PostMortemGenerator
 
+# Active Directory attacks
+from extended.ad.ad_attacker import ADAttacker
+
+# Cloud attacks
+from extended.cloud.cloud_attacker import CloudAttacker
+
+# Privilege escalation
+from extended.privesc.privesc_engine import PrivilegeEscalation
+
 
 class AkaliCLI:
     """Akali command-line interface."""
@@ -64,6 +73,12 @@ class AkaliCLI:
         self.war_room_commander = WarRoomCommander()
         self.playbook_engine = PlaybookEngine()
         self.post_mortem_generator = PostMortemGenerator()
+        # Active Directory
+        self.ad_attacker = ADAttacker()
+        # Cloud attacks
+        self.cloud_attacker = CloudAttacker(mock_mode=True)
+        # Privilege escalation
+        self.privesc = PrivilegeEscalation()
 
     def scan(self, target: str, scanner_types: Optional[List[str]] = None) -> List[Finding]:
         """Run security scan on target."""
@@ -2356,3 +2371,1219 @@ class AkaliCLI:
         if output:
             Path(output).write_bytes(chain)
             print(f"\n💾 Saved to: {output}")
+
+    # Phase 9B: Cloud Attack Commands
+
+    def cloud_enum_s3(
+        self,
+        keyword: str,
+        check_public: bool = True,
+        stealth: bool = False,
+        delay: float = 2.0,
+        output: Optional[str] = None
+    ):
+        """Enumerate AWS S3 buckets.
+
+        Args:
+            keyword: Keyword to search for (company name, project, etc.)
+            check_public: Check for public access
+            stealth: Enable stealth mode with delays
+            delay: Delay between requests in stealth mode
+            output: Optional output file for results
+        """
+        print(f"☁️  Enumerating AWS S3 buckets for keyword: {keyword}")
+
+        if stealth:
+            self.cloud_attacker.enable_stealth_mode(delay=delay)
+            print(f"🕵️  Stealth mode enabled ({delay}s delay)")
+
+        try:
+            results = self.cloud_attacker.enumerate_s3_buckets(keyword, check_public=check_public)
+
+            if not results:
+                print("✅ No buckets found")
+                return
+
+            print(f"\n📊 Found {len(results)} potential buckets:\n")
+
+            for bucket in results:
+                print(f"  🪣 {bucket['bucket_name']}")
+                if bucket.get('exists'):
+                    print(f"     ✓ Exists")
+                    if bucket.get('public'):
+                        print(f"     ⚠️  PUBLIC ACCESS")
+                    if bucket.get('region'):
+                        print(f"     Region: {bucket['region']}")
+                if bucket.get('mock'):
+                    print(f"     [MOCK MODE]")
+                print()
+
+            if output:
+                self.cloud_attacker.save_results(results, output)
+                print(f"💾 Results saved to: {output}")
+
+        except PermissionError as e:
+            print(f"❌ {e}")
+
+    def cloud_test_iam(
+        self,
+        access_key: str,
+        secret_key: str,
+        session_token: Optional[str] = None
+    ):
+        """Test AWS IAM permissions.
+
+        Args:
+            access_key: AWS access key ID
+            secret_key: AWS secret access key
+            session_token: Optional session token
+        """
+        print(f"☁️  Testing AWS IAM permissions...")
+
+        try:
+            results = self.cloud_attacker.test_iam_permissions(
+                access_key=access_key,
+                secret_key=secret_key,
+                session_token=session_token
+            )
+
+            if 'error' in results:
+                print(f"❌ Error: {results['error']}")
+                return
+
+            print(f"\n✓ User: {results.get('user', 'N/A')}")
+
+            if 'attached_policies' in results and results['attached_policies']:
+                print(f"\n📋 Attached Policies:")
+                for policy in results['attached_policies']:
+                    print(f"  • {policy}")
+
+            if 'inline_policies' in results and results['inline_policies']:
+                print(f"\n📋 Inline Policies:")
+                for policy in results['inline_policies']:
+                    print(f"  • {policy}")
+
+            if 'groups' in results and results['groups']:
+                print(f"\n👥 Groups:")
+                for group in results['groups']:
+                    print(f"  • {group}")
+
+            if results.get('mock'):
+                print(f"\n[MOCK MODE]")
+
+        except PermissionError as e:
+            print(f"❌ {e}")
+
+    def cloud_enum_azure(
+        self,
+        keyword: str,
+        stealth: bool = False,
+        delay: float = 2.0,
+        output: Optional[str] = None
+    ):
+        """Enumerate Azure blob storage.
+
+        Args:
+            keyword: Keyword to search for
+            stealth: Enable stealth mode
+            delay: Delay between requests
+            output: Optional output file
+        """
+        print(f"☁️  Enumerating Azure blob storage for keyword: {keyword}")
+
+        if stealth:
+            self.cloud_attacker.enable_stealth_mode(delay=delay)
+            print(f"🕵️  Stealth mode enabled ({delay}s delay)")
+
+        try:
+            results = self.cloud_attacker.enumerate_azure_blobs(keyword)
+
+            if not results:
+                print("✅ No containers found")
+                return
+
+            print(f"\n📊 Found {len(results)} storage containers:\n")
+
+            for container in results:
+                print(f"  📦 {container['account_name']} / {container['container_name']}")
+                if container.get('exists'):
+                    print(f"     ✓ Exists")
+                if container.get('mock'):
+                    print(f"     [MOCK MODE]")
+                print()
+
+            if output:
+                self.cloud_attacker.save_results(results, output)
+                print(f"💾 Results saved to: {output}")
+
+        except PermissionError as e:
+            print(f"❌ {e}")
+
+    def cloud_test_azure_perms(
+        self,
+        tenant_id: str,
+        client_id: str,
+        secret: str,
+        subscription_id: Optional[str] = None
+    ):
+        """Test Azure service principal permissions.
+
+        Args:
+            tenant_id: Azure AD tenant ID
+            client_id: Service principal client ID
+            secret: Service principal secret
+            subscription_id: Optional subscription ID
+        """
+        print(f"☁️  Testing Azure service principal permissions...")
+
+        try:
+            results = self.cloud_attacker.test_azure_permissions(
+                tenant_id=tenant_id,
+                client_id=client_id,
+                secret=secret,
+                subscription_id=subscription_id
+            )
+
+            if 'error' in results:
+                print(f"❌ Error: {results['error']}")
+                return
+
+            print(f"\n✓ Tenant: {results.get('tenant_id', 'N/A')}")
+            print(f"✓ Client: {results.get('client_id', 'N/A')}")
+
+            if 'resource_groups' in results and results['resource_groups']:
+                print(f"\n📋 Resource Groups:")
+                for rg in results['resource_groups']:
+                    print(f"  • {rg}")
+
+            if 'permissions' in results:
+                print(f"\n🔑 Permissions: {results['permissions']}")
+
+            if results.get('mock'):
+                print(f"\n[MOCK MODE]")
+
+        except PermissionError as e:
+            print(f"❌ {e}")
+
+    def cloud_enum_gcp(
+        self,
+        keyword: str,
+        stealth: bool = False,
+        delay: float = 2.0,
+        output: Optional[str] = None
+    ):
+        """Enumerate GCP storage buckets.
+
+        Args:
+            keyword: Keyword to search for
+            stealth: Enable stealth mode
+            delay: Delay between requests
+            output: Optional output file
+        """
+        print(f"☁️  Enumerating GCP storage buckets for keyword: {keyword}")
+
+        if stealth:
+            self.cloud_attacker.enable_stealth_mode(delay=delay)
+            print(f"🕵️  Stealth mode enabled ({delay}s delay)")
+
+        try:
+            results = self.cloud_attacker.enumerate_gcp_buckets(keyword)
+
+            if not results:
+                print("✅ No buckets found")
+                return
+
+            print(f"\n📊 Found {len(results)} potential buckets:\n")
+
+            for bucket in results:
+                print(f"  🪣 {bucket['bucket_name']}")
+                if bucket.get('exists'):
+                    print(f"     ✓ Exists")
+                    if bucket.get('public'):
+                        print(f"     ⚠️  PUBLIC ACCESS")
+                if bucket.get('mock'):
+                    print(f"     [MOCK MODE]")
+                print()
+
+            if output:
+                self.cloud_attacker.save_results(results, output)
+                print(f"💾 Results saved to: {output}")
+
+        except PermissionError as e:
+            print(f"❌ {e}")
+
+    def cloud_metadata(self, target: str = "169.254.169.254"):
+        """Check for exposed cloud metadata service.
+
+        Args:
+            target: IP address or hostname to check
+        """
+        print(f"☁️  Checking for cloud metadata service at {target}...")
+
+        try:
+            results = self.cloud_attacker.check_metadata_service(target)
+
+            if results.get('accessible'):
+                print(f"\n⚠️  METADATA SERVICE ACCESSIBLE!")
+                print(f"   Provider: {results['provider'].upper()}")
+
+                if results['provider'] == 'aws':
+                    print(f"   AMI ID: {results.get('ami_id', 'N/A')}")
+                elif results['provider'] == 'azure':
+                    print(f"   VM Name: {results.get('vm_name', 'N/A')}")
+                elif results['provider'] == 'gcp':
+                    print(f"   Instance: {results.get('instance_name', 'N/A')}")
+
+                if results.get('mock'):
+                    print(f"\n[MOCK MODE]")
+            else:
+                print(f"✅ Metadata service not accessible")
+
+        except PermissionError as e:
+            print(f"❌ {e}")
+
+    def cloud_disable_mock(self):
+        """Disable mock mode for cloud attacks (requires authorization)."""
+        print("⚠️  WARNING: This will enable REAL cloud API calls!")
+        print("   Only use with explicit authorization.")
+
+        response = input("\nType 'I AUTHORIZE' to continue: ")
+
+        if response.strip() == "I AUTHORIZE":
+            self.cloud_attacker.set_mock_mode(False, authorized=True)
+            print("✓ Mock mode disabled. Cloud attacks will use REAL APIs.")
+        else:
+            print("❌ Authorization not confirmed. Mock mode remains enabled.")
+
+    # ========================================================================
+    # Privilege Escalation Commands
+    # ========================================================================
+
+    def privesc_enumerate(self, os_type: Optional[str] = None, output: Optional[str] = None, format: str = 'json'):
+        """Enumerate privilege escalation vectors."""
+        print(f"\n🥷 Akali Privilege Escalation Enumeration\n")
+
+        # Auto-detect OS if not specified
+        if not os_type:
+            os_type = self.privesc.detect_os()
+            print(f"Detected OS: {os_type}")
+
+        print(f"\n🔍 Enumerating {os_type.upper()} privilege escalation vectors...\n")
+
+        # Run enumeration
+        if os_type == 'windows':
+            results = self.privesc.enumerate_windows(local=True)
+        elif os_type == 'linux':
+            results = self.privesc.enumerate_linux(local=True)
+        else:
+            print(f"❌ Unsupported OS type: {os_type}")
+            return
+
+        # Print summary
+        total_findings = 0
+        critical_findings = 0
+        high_findings = 0
+
+        for category, findings in results.items():
+            if isinstance(findings, list):
+                total_findings += len(findings)
+                for finding in findings:
+                    severity = finding.get('severity', 'low')
+                    if severity == 'critical':
+                        critical_findings += 1
+                    elif severity == 'high':
+                        high_findings += 1
+
+        print(f"📊 Summary:")
+        print(f"  Total findings: {total_findings}")
+        print(f"  Critical: {critical_findings}")
+        print(f"  High: {high_findings}")
+
+        # Display findings by category
+        severity_emoji = {
+            'critical': '🔴',
+            'high': '🟠',
+            'medium': '🟡',
+            'low': '🔵',
+            'info': '⚪'
+        }
+
+        for category, findings in results.items():
+            if isinstance(findings, list) and findings:
+                print(f"\n{category.replace('_', ' ').title()} ({len(findings)}):")
+                for finding in findings[:5]:  # Limit to 5 per category
+                    severity = finding.get('severity', 'low')
+                    desc = finding.get('description', str(finding))
+                    emoji = severity_emoji.get(severity, '⚪')
+                    print(f"  {emoji} {desc}")
+
+                if len(findings) > 5:
+                    print(f"  ... and {len(findings) - 5} more")
+
+        # Export if requested
+        if output:
+            success = self.privesc.export_results(results, output, format=format)
+            if success:
+                print(f"\n💾 Results exported to: {output}")
+            else:
+                print(f"\n❌ Failed to export results")
+
+    def privesc_check_kernel(self, os_type: str, version: str):
+        """Check for kernel exploits."""
+        print(f"\n🥷 Checking kernel exploits for {os_type} {version}\n")
+
+        exploits = self.privesc.check_kernel_exploits(os_type, version)
+
+        if not exploits:
+            print(f"✅ No known kernel exploits found for {version}")
+            return
+
+        print(f"⚠️  Found {len(exploits)} potential kernel exploits:\n")
+
+        for exploit in exploits:
+            print(f"🔴 {exploit['cve']}: {exploit['name']}")
+            print(f"   Severity: {exploit['severity'].upper()}")
+            print(f"   Versions: {', '.join(exploit['versions'])}")
+            print(f"   Exploit available: {'Yes' if exploit.get('exploit_available') else 'No'}")
+            if exploit.get('references'):
+                print(f"   References:")
+                for ref in exploit['references'][:2]:
+                    print(f"     - {ref}")
+            print()
+
+    def privesc_exploit_service(self, service_name: str, payload_path: str):
+        """Exploit weak service permissions (Windows)."""
+        print(f"\n🥷 Exploiting service: {service_name}\n")
+        print(f"⚠️  WARNING: This is for authorized testing only!\n")
+
+        result = self.privesc.exploit_service_permissions(service_name, payload_path)
+
+        if result['success']:
+            print(f"✅ Exploitation steps identified:\n")
+            for step in result.get('steps', []):
+                print(f"  • {step}")
+        else:
+            print(f"❌ Exploitation failed: {result['message']}")
+
+    def privesc_exploit_suid(self, binary_path: str, command: str = '!/bin/bash'):
+        """Exploit SUID binary (Linux)."""
+        print(f"\n🥷 Exploiting SUID binary: {binary_path}\n")
+        print(f"⚠️  WARNING: This is for authorized testing only!\n")
+
+        result = self.privesc.exploit_suid_binary(binary_path, command)
+
+        if result['success']:
+            print(f"✅ Exploit methods found:\n")
+            for method in result.get('exploit_methods', []):
+                print(f"  • {method}")
+            print(f"\nSteps:")
+            for step in result.get('steps', []):
+                print(f"  {step}")
+        else:
+            print(f"❌ {result['message']}")
+
+    def privesc_check_sudo(self):
+        """Check for sudo misconfigurations (Linux)."""
+        print(f"\n🥷 Checking sudo configuration\n")
+
+        misconfigs = self.privesc.check_sudo_misconfig()
+
+        if not misconfigs:
+            print(f"✅ No sudo misconfigurations found")
+            return
+
+        print(f"⚠️  Found {len(misconfigs)} sudo misconfigurations:\n")
+
+        for config in misconfigs:
+            severity = config.get('severity', 'low')
+            emoji = {'critical': '🔴', 'high': '🟠', 'medium': '🟡', 'low': '🔵'}.get(severity, '⚪')
+
+            print(f"{emoji} Severity: {severity.upper()}")
+            print(f"   Commands: {', '.join(config.get('commands', []))}")
+            print(f"   NOPASSWD: {config.get('nopasswd', False)}")
+            if config.get('exploitable_command'):
+                print(f"   ⚠️  Exploitable: {config['exploitable_command']}")
+            print()
+
+    # Phase 9B: Active Directory Attacks
+
+    def ad_enum(
+        self,
+        domain: str,
+        username: Optional[str] = None,
+        password: Optional[str] = None
+    ):
+        """Enumerate Active Directory domain.
+
+        Args:
+            domain: Target domain (e.g., corp.local)
+            username: Optional username for authentication
+            password: Optional password
+        """
+        print("\n⚠️  AUTHORIZATION CHECK")
+        print("Active Directory enumeration requires explicit permission.")
+        consent = input("\nDo you have authorization to enumerate this domain? (yes/no): ")
+        if consent.lower() != "yes":
+            print("❌ Operation cancelled. Authorization required.")
+            return
+
+        if not self.ad_attacker.check_available():
+            print("❌ Required dependencies not available (install ldap3 and impacket)")
+            return
+
+        print(f"\n🥷 Enumerating domain: {domain}")
+
+        result = self.ad_attacker.enumerate_domain(domain, username, password)
+
+        if result and "error" not in result:
+            print(f"\n✅ Enumeration complete")
+            print(f"\n📊 Results:")
+            print(f"  Users: {len(result.get('users', []))}")
+            print(f"  Computers: {len(result.get('computers', []))}")
+            print(f"  Groups: {len(result.get('groups', []))}")
+
+            # Print sample users
+            users = result.get('users', [])[:5]
+            if users:
+                print(f"\n👥 Sample Users:")
+                for user in users:
+                    print(f"  - {user.get('username', 'unknown')}")
+
+            # Print sample computers
+            computers = result.get('computers', [])[:5]
+            if computers:
+                print(f"\n💻 Sample Computers:")
+                for computer in computers:
+                    print(f"  - {computer.get('name', 'unknown')}")
+        else:
+            print(f"❌ Enumeration failed: {result.get('error', 'Unknown error')}")
+
+    def ad_kerberoast(
+        self,
+        domain: str,
+        username: str,
+        password: str,
+        dc_ip: Optional[str] = None
+    ):
+        """Execute Kerberoasting attack.
+
+        Args:
+            domain: Target domain
+            username: Domain username
+            password: User password
+            dc_ip: Optional DC IP address
+        """
+        print("\n⚠️  AUTHORIZATION CHECK")
+        print("Kerberoasting requires explicit permission.")
+        consent = input("\nDo you have authorization to perform this attack? (yes/no): ")
+        if consent.lower() != "yes":
+            print("❌ Operation cancelled. Authorization required.")
+            return
+
+        print(f"\n🥷 Kerberoasting domain: {domain}")
+
+        results = self.ad_attacker.kerberoast(domain, username, password)
+
+        if results:
+            print(f"\n✅ Found {len(results)} Kerberoastable accounts")
+
+            for result in results:
+                print(f"\n👤 {result['username']}")
+                print(f"   SPN: {result['spn']}")
+                print(f"   Hash: {result['hash'][:80]}...")
+
+            print(f"\n💡 Crack hashes with: hashcat -m 13100 -a 0 hashes.txt wordlist.txt")
+        else:
+            print("❌ No Kerberoastable accounts found")
+
+    def ad_asreproast(
+        self,
+        domain: str,
+        user_list: Optional[str] = None,
+        dc_ip: Optional[str] = None
+    ):
+        """Execute AS-REP roasting attack.
+
+        Args:
+            domain: Target domain
+            user_list: Optional path to user list file
+            dc_ip: Optional DC IP address
+        """
+        print("\n⚠️  AUTHORIZATION CHECK")
+        print("AS-REP roasting requires explicit permission.")
+        consent = input("\nDo you have authorization to perform this attack? (yes/no): ")
+        if consent.lower() != "yes":
+            print("❌ Operation cancelled. Authorization required.")
+            return
+
+        print(f"\n🥷 AS-REP roasting domain: {domain}")
+
+        results = self.ad_attacker.asreproast(domain, user_list)
+
+        if results:
+            print(f"\n✅ Found {len(results)} vulnerable accounts")
+
+            for result in results:
+                print(f"\n👤 {result['username']}")
+                print(f"   Hash: {result['hash'][:80]}...")
+
+            print(f"\n💡 Crack hashes with: hashcat -m 18200 -a 0 hashes.txt wordlist.txt")
+        else:
+            print("❌ No AS-REP roastable accounts found")
+
+    def ad_pth(
+        self,
+        username: str,
+        ntlm_hash: str,
+        target: str,
+        command: Optional[str] = None,
+        domain: Optional[str] = None
+    ):
+        """Execute Pass-the-Hash attack.
+
+        Args:
+            username: Username to authenticate as
+            ntlm_hash: NTLM hash (LM:NTLM or just NTLM)
+            target: Target IP or hostname
+            command: Optional command to execute
+            domain: Optional domain name
+        """
+        print("\n⚠️  AUTHORIZATION CHECK")
+        print("Pass-the-Hash requires explicit permission.")
+        consent = input("\nDo you have authorization to perform this attack? (yes/no): ")
+        if consent.lower() != "yes":
+            print("❌ Operation cancelled. Authorization required.")
+            return
+
+        print(f"\n🥷 Pass-the-Hash: {username}@{target}")
+
+        result = self.ad_attacker.pass_the_hash(
+            username=username,
+            ntlm_hash=ntlm_hash,
+            target=target,
+            command=command,
+            domain=domain
+        )
+
+        if result and result.get("success"):
+            print(f"\n✅ Pass-the-Hash successful")
+            if result.get("output"):
+                print(f"\nOutput:\n{result['output']}")
+        else:
+            print(f"❌ Pass-the-Hash failed: {result.get('error', 'Unknown error')}")
+
+    def ad_ptt(self, ticket_path: str, target: str):
+        """Execute Pass-the-Ticket attack.
+
+        Args:
+            ticket_path: Path to Kerberos ticket
+            target: Target IP or hostname
+        """
+        print("\n⚠️  AUTHORIZATION CHECK")
+        print("Pass-the-Ticket requires explicit permission.")
+        consent = input("\nDo you have authorization to perform this attack? (yes/no): ")
+        if consent.lower() != "yes":
+            print("❌ Operation cancelled. Authorization required.")
+            return
+
+        print(f"\n🥷 Pass-the-Ticket: {ticket_path} → {target}")
+
+        result = self.ad_attacker.pass_the_ticket(ticket_path, target)
+
+        if result and result.get("success"):
+            print(f"\n✅ Pass-the-Ticket successful")
+        else:
+            print(f"❌ Pass-the-Ticket failed: {result.get('error', 'Unknown error')}")
+
+    def ad_golden_ticket(
+        self,
+        domain: str,
+        sid: str,
+        krbtgt_hash: str,
+        username: str = "Administrator"
+    ):
+        """Generate Golden Ticket.
+
+        Args:
+            domain: Target domain
+            sid: Domain SID
+            krbtgt_hash: KRBTGT account NTLM hash
+            username: Username to impersonate
+        """
+        print("\n⚠️  AUTHORIZATION CHECK")
+        print("Golden Ticket generation requires explicit permission.")
+        consent = input("\nDo you have authorization to perform this attack? (yes/no): ")
+        if consent.lower() != "yes":
+            print("❌ Operation cancelled. Authorization required.")
+            return
+
+        print(f"\n🥷 Generating Golden Ticket for {username}@{domain}")
+
+        ticket_path = self.ad_attacker.golden_ticket(
+            domain=domain,
+            sid=sid,
+            krbtgt_hash=krbtgt_hash,
+            username=username
+        )
+
+        if ticket_path:
+            print(f"\n✅ Golden Ticket generated: {ticket_path}")
+            print(f"\n💡 Use with: export KRB5CCNAME={ticket_path}")
+        else:
+            print("❌ Golden Ticket generation failed")
+
+    def ad_silver_ticket(
+        self,
+        domain: str,
+        sid: str,
+        service_hash: str,
+        service: str,
+        username: str
+    ):
+        """Generate Silver Ticket.
+
+        Args:
+            domain: Target domain
+            sid: Domain SID
+            service_hash: Service account NTLM hash
+            service: Service SPN
+            username: Username to impersonate
+        """
+        print("\n⚠️  AUTHORIZATION CHECK")
+        print("Silver Ticket generation requires explicit permission.")
+        consent = input("\nDo you have authorization to perform this attack? (yes/no): ")
+        if consent.lower() != "yes":
+            print("❌ Operation cancelled. Authorization required.")
+            return
+
+        print(f"\n🥷 Generating Silver Ticket for {service}")
+
+        ticket_path = self.ad_attacker.silver_ticket(
+            domain=domain,
+            sid=sid,
+            service_hash=service_hash,
+            service=service,
+            username=username
+        )
+
+        if ticket_path:
+            print(f"\n✅ Silver Ticket generated: {ticket_path}")
+            print(f"\n💡 Use with: export KRB5CCNAME={ticket_path}")
+        else:
+            print("❌ Silver Ticket generation failed")
+
+    def ad_dcsync(
+        self,
+        domain: str,
+        username: str,
+        password: str,
+        target_user: Optional[str] = None
+    ):
+        """Execute DCSync attack.
+
+        Args:
+            domain: Target domain
+            username: Domain admin username
+            password: User password
+            target_user: Optional specific user to dump
+        """
+        print("\n⚠️  AUTHORIZATION CHECK")
+        print("DCSync requires explicit permission and Domain Admin privileges.")
+        consent = input("\nDo you have authorization to perform this attack? (yes/no): ")
+        if consent.lower() != "yes":
+            print("❌ Operation cancelled. Authorization required.")
+            return
+
+        print(f"\n🥷 DCSync: {domain}")
+        if target_user:
+            print(f"   Target user: {target_user}")
+
+        result = self.ad_attacker.dcsync(
+            domain=domain,
+            username=username,
+            password=password,
+            target_user=target_user
+        )
+
+        if result and result.get("success"):
+            hashes = result.get("hashes", [])
+            print(f"\n✅ DCSync successful - Retrieved {len(hashes)} hashes")
+
+            for hash_entry in hashes[:5]:  # Show first 5
+                print(f"\n👤 {hash_entry['username']}")
+                print(f"   NTLM: {hash_entry['ntlm']}")
+
+            if len(hashes) > 5:
+                print(f"\n... and {len(hashes) - 5} more")
+        else:
+            print(f"❌ DCSync failed: {result.get('error', 'Unknown error')}")
+
+    # Phase 9C: Purple Team Validation
+
+    def purple_test_attack(
+        self,
+        attack_type: str,
+        target: str,
+        duration: int = 300
+    ):
+        """Run attack simulation and monitor for detection.
+
+        Args:
+            attack_type: Type of attack (sqli, xss, port_scan, etc.)
+            target: Target for the attack
+            duration: Maximum duration in seconds
+        """
+        from purple.validation.defense_tester import DefenseTester
+
+        print(f"\n🥷 Purple Team Attack Simulation")
+        print(f"   Attack Type: {attack_type}")
+        print(f"   Target: {target}")
+        print(f"   Duration: {duration}s\n")
+
+        tester = DefenseTester()
+
+        try:
+            result = tester.run_attack_simulation(attack_type, target, duration)
+
+            print(f"\n✅ Simulation completed: {result['simulation_id']}")
+            print(f"\nResults:")
+            print(f"  Attack Success: {result['success']}")
+            print(f"  Detections: {len(result['detections'])}")
+            if result['mttd']:
+                print(f"  MTTD: {result['mttd']:.2f}s")
+            else:
+                print(f"  MTTD: No detection")
+
+        except Exception as e:
+            print(f"❌ Simulation failed: {e}")
+
+    def purple_test_chain(self, chain_file: str):
+        """Run multi-step attack chain.
+
+        Args:
+            chain_file: Path to attack chain JSON file
+        """
+        from purple.validation.defense_tester import DefenseTester
+
+        print(f"\n🥷 Purple Team Attack Chain")
+        print(f"   Chain File: {chain_file}\n")
+
+        tester = DefenseTester()
+
+        try:
+            chain = tester.load_attack_chain(chain_file)
+            print(f"Chain: {chain.get('chain_id', 'Unknown')}")
+            print(f"Steps: {len(chain.get('steps', []))}\n")
+
+            result = tester.run_attack_chain(chain['steps'])
+
+            print(f"\n✅ Chain execution completed")
+            print(f"\nResults:")
+            print(f"  Success: {result['success']}")
+            print(f"  Steps Completed: {len(result['steps'])}")
+
+            for step in result['steps']:
+                status = "✅" if step['success'] else "❌"
+                print(f"  {status} Step {step['step']}: {step['attack_type']}")
+
+        except Exception as e:
+            print(f"❌ Chain execution failed: {e}")
+
+    def purple_measure_mttd(self, attack_log: str, detection_log: str):
+        """Measure Mean Time To Detect from logs.
+
+        Args:
+            attack_log: Path to attack log file
+            detection_log: Path to detection log file
+        """
+        from purple.validation.defense_tester import DefenseTester
+
+        print(f"\n🥷 Calculating MTTD")
+        print(f"   Attack Log: {attack_log}")
+        print(f"   Detection Log: {detection_log}\n")
+
+        tester = DefenseTester()
+
+        try:
+            mttd = tester.measure_mttd(attack_log, detection_log)
+
+            if mttd and mttd > 0:
+                print(f"✅ MTTD: {mttd:.2f} seconds")
+            elif mttd == -1:
+                print("❌ No detection found")
+            else:
+                print("❌ Unable to calculate MTTD")
+
+        except Exception as e:
+            print(f"❌ MTTD calculation failed: {e}")
+
+    def purple_measure_mttr(self, incident_log: str):
+        """Measure Mean Time To Respond from incident log.
+
+        Args:
+            incident_log: Path to incident log file
+        """
+        from purple.validation.defense_tester import DefenseTester
+
+        print(f"\n🥷 Calculating MTTR")
+        print(f"   Incident Log: {incident_log}\n")
+
+        tester = DefenseTester()
+
+        try:
+            mttr = tester.measure_mttr(incident_log)
+
+            if mttr:
+                print(f"✅ MTTR: {mttr:.2f} seconds ({mttr/60:.2f} minutes)")
+            else:
+                print("❌ Unable to calculate MTTR")
+
+        except Exception as e:
+            print(f"❌ MTTR calculation failed: {e}")
+
+    def purple_monitor(
+        self,
+        target: str,
+        attack_type: str = None,
+        duration: int = 600
+    ):
+        """Monitor target for detection events.
+
+        Args:
+            target: Target to monitor
+            attack_type: Optional attack type filter
+            duration: Monitoring duration in seconds
+        """
+        from purple.validation.defense_tester import DefenseTester
+
+        print(f"\n🥷 Purple Team Monitoring")
+        print(f"   Target: {target}")
+        if attack_type:
+            print(f"   Attack Type: {attack_type}")
+        print(f"   Duration: {duration}s\n")
+
+        tester = DefenseTester()
+
+        try:
+            detections = tester.monitor_detection(target, attack_type or 'sqli', duration)
+
+            print(f"\n✅ Monitoring completed")
+            print(f"   Detections: {len(detections)}\n")
+
+            for detection in detections[:10]:  # Show first 10
+                print(f"  🚨 {detection.get('timestamp', 'Unknown time')}")
+                print(f"     {detection.get('message', 'No message')}")
+
+        except Exception as e:
+            print(f"❌ Monitoring failed: {e}")
+
+    def purple_report(
+        self,
+        simulation_id: str,
+        output: str,
+        format: str = "pdf"
+    ):
+        """Generate purple team validation report.
+
+        Args:
+            simulation_id: Simulation ID
+            output: Output file path
+            format: Report format (pdf, html, json)
+        """
+        from purple.validation.defense_tester import DefenseTester
+
+        print(f"\n🥷 Generating Purple Team Report")
+        print(f"   Simulation: {simulation_id}")
+        print(f"   Output: {output}")
+        print(f"   Format: {format}\n")
+
+        tester = DefenseTester()
+
+        try:
+            report_path = tester.generate_report(simulation_id, output, format)
+
+            print(f"✅ Report generated: {report_path}")
+
+        except Exception as e:
+            print(f"❌ Report generation failed: {e}")
+
+    # Purple Team Sandbox Commands
+
+    def purple_create_env(self, type: str = "webapp", isolated: bool = True):
+        """Create purple team sandbox environment.
+
+        Args:
+            type: Environment type (webapp, api, network)
+            isolated: Create isolated network
+        """
+        from purple.sandbox import PurpleTeamSandbox
+
+        print(f"\n🥷 Creating Purple Team Sandbox")
+        print(f"   Type: {type}")
+        print(f"   Isolated: {isolated}\n")
+
+        sandbox = PurpleTeamSandbox()
+
+        try:
+            result = sandbox.create_environment(
+                target_type=type,
+                network_isolated=isolated
+            )
+
+            if result["success"]:
+                print(f"✅ Environment created: {result['env_id']}")
+                print(f"   Network ID: {result.get('network_id', 'N/A')}")
+            else:
+                print(f"❌ Failed: {result.get('error')}")
+
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def purple_deploy_app(
+        self,
+        name: str,
+        env_id: str = None,
+        port: int = None
+    ):
+        """Deploy vulnerable application.
+
+        Args:
+            name: App name (dvwa, juice-shop, webgoat, etc.)
+            env_id: Environment ID (uses latest if not specified)
+            port: Host port to map to
+        """
+        from purple.sandbox import PurpleTeamSandbox
+
+        print(f"\n🥷 Deploying Vulnerable Application")
+        print(f"   App: {name}")
+        print(f"   Port: {port or 'default'}\n")
+
+        sandbox = PurpleTeamSandbox()
+
+        try:
+            # Get environment
+            if not env_id:
+                envs_result = sandbox.list_environments()
+                if envs_result["environments"]:
+                    env_id = envs_result["environments"][-1]["env_id"]
+                    print(f"   Using environment: {env_id}")
+                else:
+                    print("❌ No environments found. Create one first with:")
+                    print("   akali purple create-env --type webapp")
+                    return
+
+            # Deploy app
+            result = sandbox.deploy_vulnerable_app(env_id, name, port)
+
+            if result["success"]:
+                print(f"✅ App deployed: {name}")
+                print(f"   Container: {result['container_id']}")
+                print(f"   Port: {result['port']}")
+                print(f"   Access: {result['access_url']}")
+                if result.get('default_creds'):
+                    creds = result['default_creds']
+                    print(f"   Credentials: {creds['username']}/{creds['password']}")
+            else:
+                print(f"❌ Failed: {result.get('error')}")
+
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def purple_deploy_honeypot(
+        self,
+        service: str,
+        port: int,
+        env_id: str = None
+    ):
+        """Deploy honeypot service.
+
+        Args:
+            service: Service type (ssh, http, ftp, smtp, rdp)
+            port: Port to bind to
+            env_id: Environment ID (uses latest if not specified)
+        """
+        from purple.sandbox import PurpleTeamSandbox
+
+        print(f"\n🥷 Deploying Honeypot")
+        print(f"   Service: {service}")
+        print(f"   Port: {port}\n")
+
+        sandbox = PurpleTeamSandbox()
+
+        try:
+            # Get environment
+            if not env_id:
+                envs_result = sandbox.list_environments()
+                if envs_result["environments"]:
+                    env_id = envs_result["environments"][-1]["env_id"]
+                    print(f"   Using environment: {env_id}")
+                else:
+                    print("❌ No environments found. Create one first with:")
+                    print("   akali purple create-env --type network")
+                    return
+
+            # Deploy honeypot
+            result = sandbox.deploy_honeypot(env_id, service, port)
+
+            if result["success"]:
+                print(f"✅ Honeypot deployed: {service}")
+                print(f"   Container: {result['container_id']}")
+                print(f"   Port: {result['port']}")
+            else:
+                print(f"❌ Failed: {result.get('error')}")
+
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def purple_create_topology(self, type: str = "single_host"):
+        """Create network topology.
+
+        Args:
+            type: Topology type (single_host, dmz, multi_tier)
+        """
+        from purple.sandbox import PurpleTeamSandbox
+
+        print(f"\n🥷 Creating Network Topology")
+        print(f"   Type: {type}\n")
+
+        sandbox = PurpleTeamSandbox()
+
+        try:
+            result = sandbox.create_network_topology(type)
+
+            if result["success"]:
+                print(f"✅ Topology created: {result['topology_id']}")
+                print(f"   Type: {result['topology_type']}")
+                print(f"   Networks: {len(result['networks'])}")
+                for net in result['networks']:
+                    print(f"     - {net['name']} ({net.get('subnet', 'auto')})")
+            else:
+                print(f"❌ Failed: {result.get('error')}")
+
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def purple_start(self, env_id: str):
+        """Start sandbox environment.
+
+        Args:
+            env_id: Environment ID
+        """
+        from purple.sandbox import PurpleTeamSandbox
+
+        print(f"\n🥷 Starting Environment")
+        print(f"   Environment: {env_id}\n")
+
+        sandbox = PurpleTeamSandbox()
+
+        try:
+            result = sandbox.start_environment(env_id)
+
+            if result["success"]:
+                print(f"✅ Environment started: {env_id}")
+                print(f"   Status: {result['status']}")
+                print(f"   Containers: {result['containers']}")
+            else:
+                print(f"❌ Failed: {result.get('error')}")
+
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def purple_stop(self, env_id: str):
+        """Stop sandbox environment.
+
+        Args:
+            env_id: Environment ID
+        """
+        from purple.sandbox import PurpleTeamSandbox
+
+        print(f"\n🥷 Stopping Environment")
+        print(f"   Environment: {env_id}\n")
+
+        sandbox = PurpleTeamSandbox()
+
+        try:
+            result = sandbox.stop_environment(env_id)
+
+            if result["success"]:
+                print(f"✅ Environment stopped: {env_id}")
+                print(f"   Stopped: {result['stopped_containers']} containers")
+                print(f"   Removed: {result['removed_containers']} containers")
+            else:
+                print(f"❌ Failed: {result.get('error')}")
+
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def purple_list(self):
+        """List all sandbox environments."""
+        from purple.sandbox import PurpleTeamSandbox
+
+        print(f"\n🥷 Purple Team Sandbox Environments\n")
+
+        sandbox = PurpleTeamSandbox()
+
+        try:
+            result = sandbox.list_environments()
+
+            if result["success"]:
+                environments = result["environments"]
+                if not environments:
+                    print("   No environments found.")
+                    print("   Create one with: akali purple create-env --type webapp")
+                else:
+                    for env in environments:
+                        print(f"   {env['env_id']}")
+                        print(f"     Type: {env['target_type']}")
+                        print(f"     Status: {env['status']}")
+                        print(f"     Containers: {env['containers']}")
+                        print(f"     Created: {env['created_at'][:10]}")
+                        print()
+            else:
+                print(f"❌ Failed: {result.get('error')}")
+
+        except Exception as e:
+            print(f"❌ Error: {e}")
+
+    def purple_info(self, env_id: str):
+        """Get environment info.
+
+        Args:
+            env_id: Environment ID
+        """
+        from purple.sandbox import PurpleTeamSandbox
+
+        print(f"\n🥷 Environment Info")
+        print(f"   Environment: {env_id}\n")
+
+        sandbox = PurpleTeamSandbox()
+
+        try:
+            result = sandbox.get_environment_info(env_id)
+
+            if result["success"]:
+                print(f"   Type: {result['target_type']}")
+                print(f"   Status: {result['status']}")
+                print(f"   Isolated: {result['network_isolated']}")
+                print(f"   Created: {result['created_at'][:10]}")
+
+                if result.get('apps'):
+                    print(f"\n   Applications:")
+                    for app in result['apps']:
+                        print(f"     - {app['app_name']} (port {app['port']})")
+
+                if result.get('honeypots'):
+                    print(f"\n   Honeypots:")
+                    for hp in result['honeypots']:
+                        print(f"     - {hp['service_type']} (port {hp['port']})")
+
+                if result.get('containers'):
+                    print(f"\n   Containers:")
+                    for c in result['containers']:
+                        print(f"     - {c['container_id'][:12]} ({c['status']})")
+                        print(f"       IP: {c.get('ip_address', 'N/A')}")
+            else:
+                print(f"❌ Failed: {result.get('error')}")
+
+        except Exception as e:
+            print(f"❌ Error: {e}")

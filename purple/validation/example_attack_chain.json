@@ -1,0 +1,27 @@
+{
+  "chain_id": "lateral_movement_scenario",
+  "description": "Simulated lateral movement attack chain",
+  "steps": [
+    {
+      "step": 1,
+      "attack": "port_scan",
+      "target": "10.0.0.5",
+      "wait_for_detection": false,
+      "description": "Initial reconnaissance - port scan"
+    },
+    {
+      "step": 2,
+      "attack": "sqli",
+      "target": "http://10.0.0.5/login",
+      "wait_for_detection": true,
+      "description": "Exploit web application vulnerability"
+    },
+    {
+      "step": 3,
+      "attack": "privilege_escalation",
+      "target": "10.0.0.5",
+      "wait_for_detection": true,
+      "description": "Escalate privileges on compromised host"
+    }
+  ]
+}
