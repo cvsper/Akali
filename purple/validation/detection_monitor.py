@@ -9,6 +9,17 @@ import threading
 import time
 import uuid
 
+# Optional imports for real-world integration (mocked in tests)
+try:
+    import requests
+except ImportError:
+    requests = None
+
+try:
+    import websocket
+except ImportError:
+    websocket = None
+
 
 # Detection source configurations
 DETECTION_SOURCES = {
@@ -117,12 +128,22 @@ class DetectionMonitor:
 
         # Mock SIEM monitoring - in real scenario, would query SIEM API
         try:
-            if siem_type == 'splunk':
-                # Mock Splunk query
-                pass
-            elif siem_type == 'elasticsearch':
-                # Mock Elasticsearch query
-                pass
+            if requests and siem_type == 'splunk':
+                # Mock Splunk query - would use requests.get in production
+                response = requests.get(self.detection_sources['siem']['splunk'], timeout=timeout)
+                if response.status_code == 200:
+                    data = response.json()
+                    if 'results' in data:
+                        for result in data['results']:
+                            detections.append(result)
+            elif requests and siem_type == 'elasticsearch':
+                # Mock Elasticsearch query - would use requests.get in production
+                response = requests.get(self.detection_sources['siem']['elasticsearch'], timeout=timeout)
+                if response.status_code == 200:
+                    data = response.json()
+                    if 'hits' in data and 'hits' in data['hits']:
+                        for hit in data['hits']['hits']:
+                            detections.append(hit.get('_source', {}))
         except Exception:
             pass
 
@@ -143,8 +164,13 @@ class DetectionMonitor:
 
         # Mock EDR monitoring - in real scenario, would query EDR API
         try:
-            # Mock implementation
-            pass
+            if requests:
+                response = requests.get(self.detection_sources['edr']['endpoint'], timeout=timeout)
+                if response.status_code == 200:
+                    data = response.json()
+                    if 'alerts' in data:
+                        for alert in data['alerts']:
+                            detections.append(alert)
         except Exception:
             pass
 

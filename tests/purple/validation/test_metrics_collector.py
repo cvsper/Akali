@@ -138,7 +138,8 @@ class TestMetricsCollector:
 
     def test_calculate_percentile_mttd(self, collector):
         """Test MTTD percentile calculation."""
-        mttd_values = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        # Use 20 values to ensure distinct percentiles
+        mttd_values = [float(i) for i in range(1, 21)]
 
         p50 = collector.calculate_percentile_mttd(mttd_values, 50)
         p90 = collector.calculate_percentile_mttd(mttd_values, 90)

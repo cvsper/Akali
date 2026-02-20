@@ -32,17 +32,23 @@ class TestDetectionMonitor:
         assert 'siem' in [s['type'] for s in sources]
 
     @patch('purple.validation.detection_monitor.Path.exists')
-    @patch('purple.validation.detection_monitor.Path.open')
+    @patch('builtins.open', new_callable=MagicMock)
     def test_monitor_syslog(self, mock_open, mock_exists, monitor):
         """Test monitoring syslog for detections."""
         mock_exists.return_value = True
-        mock_open.return_value.__enter__.return_value.readlines.return_value = [
+
+        # Create mock file object
+        mock_file = MagicMock()
+        mock_file.seek = Mock()
+        mock_file.tell = Mock(return_value=100)
+        mock_file.readlines = Mock(return_value=[
             "Feb 20 10:00:05 server sshd[1234]: Failed password for admin\n",
             "Feb 20 10:00:06 server sshd[1234]: Failed password for admin\n",
             "Feb 20 10:00:07 server fail2ban: Ban 10.0.0.5\n"
-        ]
+        ])
+        mock_open.return_value.__enter__.return_value = mock_file
 
-        detections = monitor.monitor_log_file('/var/log/syslog', 'brute_force', timeout=10)
+        detections = monitor.monitor_log_file('/var/log/syslog', 'brute_force', timeout=1)
 
         assert detections is not None
         assert isinstance(detections, list)

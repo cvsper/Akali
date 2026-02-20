@@ -31,15 +31,8 @@ class TestAttackSimulator:
         assert 'sqli' in attacks
         assert 'xss' in attacks
 
-    @patch('purple.validation.attack_simulator.ExploitGenerator')
-    def test_execute_sqli_attack(self, mock_generator, simulator):
+    def test_execute_sqli_attack(self, simulator):
         """Test executing SQL injection attack."""
-        mock_generator.return_value.generate_sqli.return_value = {
-            'success': True,
-            'payload': "' OR 1=1--",
-            'response': 'Vulnerable'
-        }
-
         result = simulator.execute_attack('sqli', 'http://localhost:8080/login')
 
         assert result is not None
@@ -48,81 +41,58 @@ class TestAttackSimulator:
         assert 'start_time' in result
         assert 'end_time' in result
         assert result['attack_type'] == 'sqli'
+        assert 'payload' in result
+        assert result['target'] == 'http://localhost:8080/login'
 
-    @patch('purple.validation.attack_simulator.ExploitGenerator')
-    def test_execute_xss_attack(self, mock_generator, simulator):
+    def test_execute_xss_attack(self, simulator):
         """Test executing XSS attack."""
-        mock_generator.return_value.generate_xss.return_value = {
-            'success': True,
-            'payload': '<script>alert(1)</script>',
-            'response': 'Reflected'
-        }
-
         result = simulator.execute_attack('xss', 'http://localhost:8080/search')
 
         assert result is not None
         assert result['success'] is True
         assert result['attack_type'] == 'xss'
+        assert 'payload' in result
+        assert result['target'] == 'http://localhost:8080/search'
 
-    @patch('purple.validation.attack_simulator.NetworkScanner')
-    def test_execute_port_scan(self, mock_scanner, simulator):
+    def test_execute_port_scan(self, simulator):
         """Test executing port scan."""
-        mock_scanner.return_value.scan.return_value = {
-            'open_ports': [22, 80, 443],
-            'scan_time': 2.5
-        }
-
         result = simulator.execute_attack('port_scan', '10.0.0.5')
 
         assert result is not None
         assert result['success'] is True
         assert result['attack_type'] == 'port_scan'
         assert result['target'] == '10.0.0.5'
+        assert 'open_ports' in result
 
-    @patch('purple.validation.attack_simulator.BruteForcer')
-    def test_execute_brute_force(self, mock_bruteforcer, simulator):
+    def test_execute_brute_force(self, simulator):
         """Test executing brute force attack."""
-        mock_bruteforcer.return_value.attack_ssh.return_value = {
-            'success': True,
-            'credentials': {'username': 'admin', 'password': 'password123'},
-            'attempts': 50
-        }
-
         result = simulator.execute_attack('brute_force', '10.0.0.5:22')
 
         assert result is not None
         assert result['success'] is True
         assert result['attack_type'] == 'brute_force'
+        assert result['target'] == '10.0.0.5:22'
+        assert 'credentials' in result
 
-    @patch('purple.validation.attack_simulator.ADAttacker')
-    def test_execute_kerberoast(self, mock_ad, simulator):
+    def test_execute_kerberoast(self, simulator):
         """Test executing Kerberoasting attack."""
-        mock_ad.return_value.kerberoast.return_value = {
-            'success': True,
-            'tickets': ['ticket1', 'ticket2'],
-            'spns': ['MSSQLSvc/server.domain.com']
-        }
-
         result = simulator.execute_attack('kerberoast', '10.0.0.10')
 
         assert result is not None
         assert result['success'] is True
         assert result['attack_type'] == 'kerberoast'
+        assert result['target'] == '10.0.0.10'
+        assert 'tickets' in result
 
-    @patch('purple.validation.attack_simulator.PrivilegeEscalation')
-    def test_execute_privilege_escalation(self, mock_privesc, simulator):
+    def test_execute_privilege_escalation(self, simulator):
         """Test executing privilege escalation."""
-        mock_privesc.return_value.exploit_suid.return_value = {
-            'success': True,
-            'method': 'SUID binary',
-            'escalated_to': 'root'
-        }
-
         result = simulator.execute_attack('privilege_escalation', '10.0.0.5')
 
         assert result is not None
         assert result['success'] is True
         assert result['attack_type'] == 'privilege_escalation'
+        assert result['target'] == '10.0.0.5'
+        assert 'method' in result
 
     def test_execute_invalid_attack(self, simulator):
         """Test handling of invalid attack type."""
@@ -207,8 +177,10 @@ class TestAttackSimulator:
         """Test stopping a running attack."""
         # Start attack
         attack_id = 'attack-001'
+        simulator.running_attacks[attack_id] = {'status': 'running'}
 
         # Stop attack
         result = simulator.stop_attack(attack_id)
 
         assert result is True
+        assert attack_id not in simulator.running_attacks

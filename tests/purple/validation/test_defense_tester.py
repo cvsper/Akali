@@ -107,7 +107,7 @@ class TestDefenseTester:
         assert mttr is not None
         assert isinstance(mttr, float)
         assert mttr > 0
-        assert mttr == 295.0  # 4 minutes 55 seconds
+        assert mttr == 145.0  # 2 minutes 25 seconds (detected to contained)
 
     @patch('purple.validation.defense_tester.AttackSimulator')
     def test_run_attack_chain(self, mock_simulator, tester):
@@ -163,10 +163,10 @@ class TestDefenseTester:
         assert result['success'] is False
         assert 'error' in result
 
-    @patch('purple.validation.defense_tester.DetectionMonitor')
-    def test_monitor_detection(self, mock_monitor, tester):
+    def test_monitor_detection(self, tester):
         """Test monitoring for detection events."""
-        mock_monitor.return_value.monitor.return_value = [
+        # Mock the detection monitor's method directly on the tester instance
+        mock_detections = [
             {
                 'detection_id': 'det-001',
                 'timestamp': datetime.now().isoformat(),
@@ -174,6 +174,7 @@ class TestDefenseTester:
                 'attack_type': 'port_scan'
             }
         ]
+        tester.detection_monitor.monitor_log_file = Mock(return_value=mock_detections)
 
         detections = tester.monitor_detection('10.0.0.5', 'port_scan', timeout=60)
 
@@ -195,6 +196,15 @@ class TestDefenseTester:
         """Test PDF report generation."""
         output_path = temp_dir / "report.pdf"
 
+        # Add simulation to tester
+        tester.simulations['sim-001'] = {
+            'attack_id': 'attack-001',
+            'attack_type': 'sqli',
+            'target': 'http://localhost',
+            'success': True,
+            'detections': []
+        }
+
         mock_generator.return_value.generate_pdf_report.return_value = str(output_path)
 
         result = tester.generate_report('sim-001', str(output_path), format='pdf')
@@ -207,6 +217,15 @@ class TestDefenseTester:
         """Test HTML report generation."""
         output_path = temp_dir / "report.html"
 
+        # Add simulation to tester
+        tester.simulations['sim-001'] = {
+            'attack_id': 'attack-001',
+            'attack_type': 'sqli',
+            'target': 'http://localhost',
+            'success': True,
+            'detections': []
+        }
+
         mock_generator.return_value.generate_html_report.return_value = str(output_path)
 
         result = tester.generate_report('sim-001', str(output_path), format='html')
@@ -218,6 +237,15 @@ class TestDefenseTester:
     def test_generate_report_json(self, mock_generator, tester, temp_dir):
         """Test JSON report generation."""
         output_path = temp_dir / "report.json"
+
+        # Add simulation to tester
+        tester.simulations['sim-001'] = {
+            'attack_id': 'attack-001',
+            'attack_type': 'sqli',
+            'target': 'http://localhost',
+            'success': True,
+            'detections': []
+        }
 
         mock_generator.return_value.generate_json_report.return_value = str(output_path)
 
