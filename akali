@@ -167,6 +167,83 @@ For more help: https://github.com/sevs/akali
     fuzz_analyze_parser.add_argument("crash_dir", help="Directory containing crash files")
     fuzz_analyze_parser.add_argument("--report", action="store_true", help="Generate detailed report")
 
+    # Cloud command (Phase 9B)
+    cloud_parser = subparsers.add_parser("cloud", help="Cloud infrastructure attacks (AWS/Azure/GCP)")
+    cloud_subparsers = cloud_parser.add_subparsers(dest="cloud_command")
+
+    enum_s3_parser = cloud_subparsers.add_parser("enum-s3", help="Enumerate AWS S3 buckets")
+    enum_s3_parser.add_argument("--keyword", required=True, help="Keyword to search for")
+    enum_s3_parser.add_argument("--check-public", action="store_true", help="Check for public access")
+
+    test_iam_parser = cloud_subparsers.add_parser("test-iam", help="Test AWS IAM permissions")
+    test_iam_parser.add_argument("--access-key", required=True, help="AWS access key")
+    test_iam_parser.add_argument("--secret-key", required=True, help="AWS secret key")
+
+    enum_azure_parser = cloud_subparsers.add_parser("enum-azure", help="Enumerate Azure blob storage")
+    enum_azure_parser.add_argument("--keyword", required=True, help="Keyword to search for")
+
+    enum_gcp_parser = cloud_subparsers.add_parser("enum-gcp", help="Enumerate GCP storage buckets")
+    enum_gcp_parser.add_argument("--keyword", required=True, help="Keyword to search for")
+
+    metadata_parser = cloud_subparsers.add_parser("metadata", help="Check cloud metadata service")
+    metadata_parser.add_argument("--target", default="169.254.169.254", help="Metadata service IP")
+
+    # Active Directory command (Phase 9B)
+    ad_parser = subparsers.add_parser("ad", help="Active Directory attacks")
+    ad_subparsers = ad_parser.add_subparsers(dest="ad_command")
+
+    ad_enum_parser = ad_subparsers.add_parser("enum", help="Enumerate domain")
+    ad_enum_parser.add_argument("--domain", required=True, help="Domain name")
+    ad_enum_parser.add_argument("--user", help="Username")
+    ad_enum_parser.add_argument("--password", help="Password")
+
+    kerberoast_parser = ad_subparsers.add_parser("kerberoast", help="Kerberoasting attack")
+    kerberoast_parser.add_argument("--domain", required=True, help="Domain name")
+    kerberoast_parser.add_argument("--user", required=True, help="Username")
+    kerberoast_parser.add_argument("--password", required=True, help="Password")
+
+    pth_parser = ad_subparsers.add_parser("pth", help="Pass-the-Hash attack")
+    pth_parser.add_argument("--username", required=True, help="Username")
+    pth_parser.add_argument("--hash", required=True, help="NTLM hash")
+    pth_parser.add_argument("--target", required=True, help="Target host")
+
+    golden_ticket_parser = ad_subparsers.add_parser("golden-ticket", help="Generate Golden Ticket")
+    golden_ticket_parser.add_argument("--domain", required=True, help="Domain name")
+    golden_ticket_parser.add_argument("--sid", required=True, help="Domain SID")
+    golden_ticket_parser.add_argument("--krbtgt-hash", required=True, help="KRBTGT hash")
+
+    # Privilege Escalation command (Phase 9B)
+    privesc_parser = subparsers.add_parser("privesc", help="Privilege escalation")
+    privesc_subparsers = privesc_parser.add_subparsers(dest="privesc_command")
+
+    privesc_enum_parser = privesc_subparsers.add_parser("enum", help="Enumerate privilege escalation vectors")
+    privesc_enum_parser.add_argument("--os", choices=["windows", "linux"], help="Operating system")
+    privesc_enum_parser.add_argument("--output", help="Output file path")
+
+    check_kernel_parser = privesc_subparsers.add_parser("check-kernel", help="Check for kernel exploits")
+    check_kernel_parser.add_argument("--os", required=True, choices=["windows", "linux"], help="Operating system")
+    check_kernel_parser.add_argument("--version", required=True, help="OS version")
+
+    # Purple Team command (Phase 9C)
+    purple_parser = subparsers.add_parser("purple", help="Purple team testing")
+    purple_subparsers = purple_parser.add_subparsers(dest="purple_command")
+
+    create_env_parser = purple_subparsers.add_parser("create-env", help="Create test environment")
+    create_env_parser.add_argument("--type", required=True, help="Environment type")
+
+    deploy_app_parser = purple_subparsers.add_parser("deploy-app", help="Deploy vulnerable app")
+    deploy_app_parser.add_argument("--name", required=True, help="App name (dvwa, juice-shop, etc.)")
+    deploy_app_parser.add_argument("--port", type=int, help="Port to expose")
+
+    test_attack_parser = purple_subparsers.add_parser("test-attack", help="Run attack simulation")
+    test_attack_parser.add_argument("--type", required=True, help="Attack type")
+    test_attack_parser.add_argument("--target", required=True, help="Target URL or IP")
+
+    purple_report_parser = purple_subparsers.add_parser("report", help="Generate purple team report")
+    purple_report_parser.add_argument("--simulation-id", required=True, help="Simulation ID")
+    purple_report_parser.add_argument("--output", required=True, help="Output file path")
+    purple_report_parser.add_argument("--format", choices=["pdf", "html", "json"], default="pdf", help="Report format")
+
     # Schedule command (autonomous)
     schedule_parser = subparsers.add_parser("schedule", help="Manage scheduled jobs")
     schedule_subparsers = schedule_parser.add_subparsers(dest="schedule_command")
@@ -669,6 +746,54 @@ For more help: https://github.com/sevs/akali
                 cli.fuzz_analyze(args.crash_dir, report=args.report)
             else:
                 fuzz_parser.print_help()
+
+        elif args.command == "cloud":
+            if args.cloud_command == "enum-s3":
+                cli.cloud_enum_s3(keyword=args.keyword, check_public=args.check_public)
+            elif args.cloud_command == "test-iam":
+                cli.cloud_test_iam(access_key=args.access_key, secret_key=args.secret_key)
+            elif args.cloud_command == "enum-azure":
+                cli.cloud_enum_azure(keyword=args.keyword)
+            elif args.cloud_command == "enum-gcp":
+                cli.cloud_enum_gcp(keyword=args.keyword)
+            elif args.cloud_command == "metadata":
+                cli.cloud_metadata(target=args.target)
+            else:
+                cloud_parser.print_help()
+
+        elif args.command == "ad":
+            if args.ad_command == "enum":
+                cli.ad_enumerate(domain=args.domain, username=args.user, password=args.password)
+            elif args.ad_command == "kerberoast":
+                cli.ad_kerberoast(domain=args.domain, username=args.user, password=args.password)
+            elif args.ad_command == "pth":
+                cli.ad_pass_the_hash(username=args.username, ntlm_hash=args.hash, target=args.target)
+            elif args.ad_command == "golden-ticket":
+                cli.ad_golden_ticket(domain=args.domain, sid=args.sid, krbtgt_hash=args.krbtgt_hash)
+            else:
+                ad_parser.print_help()
+
+        elif args.command == "privesc":
+            if args.privesc_command == "enum":
+                cli.privesc_enumerate(os_type=args.os, output=args.output)
+            elif args.privesc_command == "check-kernel":
+                cli.privesc_check_kernel(os_type=args.os, version=args.version)
+            else:
+                privesc_parser.print_help()
+
+        elif args.command == "purple":
+            if args.purple_command == "create-env":
+                cli.purple_create_environment(env_type=args.type)
+            elif args.purple_command == "deploy-app":
+                cli.purple_deploy_app(app_name=args.name, port=args.port)
+            elif args.purple_command == "test-attack":
+                cli.purple_test_attack(attack_type=args.type, target=args.target)
+            elif args.purple_command == "report":
+                cli.purple_generate_report(simulation_id=args.simulation_id,
+                                          output_path=args.output,
+                                          format=args.format)
+            else:
+                purple_parser.print_help()
 
         elif args.command == "schedule":
             if args.schedule_command == "list":
