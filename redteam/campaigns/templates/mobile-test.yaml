@@ -1,0 +1,40 @@
+name: "Mobile App Security Test"
+description: "Comprehensive mobile app penetration test"
+target_type: mobile
+
+stages:
+  - name: recon
+    description: "Reconnaissance and app download"
+    tasks:
+      - action: mobile.static.analyze
+        params:
+          apk_path: "${TARGET}"
+      - action: mobile.static.extract_endpoints
+        params:
+          apk_path: "${TARGET}"
+
+  - name: static_analysis
+    description: "Static vulnerability analysis"
+    tasks:
+      - action: mobile.static.find_secrets
+      - action: mobile.static.check_permissions
+      - action: mobile.static.check_crypto
+
+  - name: dynamic_analysis
+    description: "Runtime testing"
+    checkpoint: true  # Pause for red team mode
+    tasks:
+      - action: mobile.dynamic.ssl_bypass
+        params:
+          app_id: "${APP_ID}"
+      - action: mobile.dynamic.extract_tokens
+      - action: mobile.proxy.intercept
+        duration: 300  # 5 minutes
+
+  - name: api_testing
+    description: "Mobile API security testing"
+    checkpoint: true
+    tasks:
+      - action: mobile.api.test_auth
+      - action: mobile.api.test_idor
+      - action: mobile.api.fuzz_endpoints

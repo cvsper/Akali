@@ -374,6 +374,45 @@ For more help: https://github.com/sevs/akali
 
     hunt_stats_parser = hunt_subparsers.add_parser("stats", help="Show hunting statistics")
 
+    # Phase 7: Mobile pentesting commands
+    mobile_parser = subparsers.add_parser("mobile", help="Mobile penetration testing")
+    mobile_subparsers = mobile_parser.add_subparsers(dest="mobile_command")
+
+    mobile_static_parser = mobile_subparsers.add_parser("static", help="Static analysis")
+    mobile_static_parser.add_argument("target", help="APK or IPA file")
+    mobile_static_parser.add_argument("--platform", choices=["android", "ios"], default="android")
+
+    # Phase 7: C2 commands
+    c2_parser = subparsers.add_parser("c2", help="Command & Control")
+    c2_subparsers = c2_parser.add_subparsers(dest="c2_command")
+
+    c2_agent_parser = c2_subparsers.add_parser("agent", help="Agent management")
+    c2_agent_subparsers = c2_agent_parser.add_subparsers(dest="agent_action")
+    c2_agent_subparsers.add_parser("list", help="List agents")
+
+    c2_task_parser = c2_subparsers.add_parser("task", help="Task management")
+    c2_task_subparsers = c2_task_parser.add_subparsers(dest="task_action")
+    task_send_parser = c2_task_subparsers.add_parser("send", help="Send task")
+    task_send_parser.add_argument("agent_id", help="Agent ID")
+    task_send_parser.add_argument("command", help="Command to execute")
+    task_send_parser.add_argument("--args", default="", help="Command arguments")
+
+    # Phase 7: Red team campaign commands
+    redteam_parser = subparsers.add_parser("redteam", help="Red team operations")
+    redteam_subparsers = redteam_parser.add_subparsers(dest="redteam_command")
+
+    campaign_parser = redteam_subparsers.add_parser("campaign", help="Campaign management")
+    campaign_subparsers = campaign_parser.add_subparsers(dest="campaign_action")
+
+    campaign_create_parser = campaign_subparsers.add_parser("create", help="Create campaign")
+    campaign_create_parser.add_argument("name", help="Campaign name")
+    campaign_create_parser.add_argument("--target", required=True, help="Target")
+    campaign_create_parser.add_argument("--mode", choices=["red", "purple"], default="purple")
+    campaign_create_parser.add_argument("--template", default="mobile-test", help="Campaign template")
+
+    campaign_run_parser = campaign_subparsers.add_parser("run", help="Run campaign")
+    campaign_run_parser.add_argument("campaign_id", help="Campaign ID")
+
     # Status command
     subparsers.add_parser("status", help="Show Akali status")
 
@@ -696,6 +735,42 @@ For more help: https://github.com/sevs/akali
 
             else:
                 hunt_parser.print_help()
+
+        # Phase 7: Mobile commands
+        elif args.command == "mobile":
+            if args.mobile_command == "static":
+                cli.mobile_static(args.target, platform=args.platform)
+            else:
+                mobile_parser.print_help()
+
+        # Phase 7: C2 commands
+        elif args.command == "c2":
+            if args.c2_command == "agent":
+                if args.agent_action == "list":
+                    cli.c2_agent_list()
+                else:
+                    c2_agent_parser.print_help()
+
+            elif args.c2_command == "task":
+                if args.task_action == "send":
+                    cli.c2_task_send(args.agent_id, args.command, args=args.args)
+                else:
+                    c2_task_parser.print_help()
+
+            else:
+                c2_parser.print_help()
+
+        # Phase 7: Red team campaign commands
+        elif args.command == "redteam":
+            if args.redteam_command == "campaign":
+                if args.campaign_action == "create":
+                    cli.redteam_campaign_create(args.name, args.target, args.mode, args.template)
+                elif args.campaign_action == "run":
+                    cli.redteam_campaign_run(args.campaign_id)
+                else:
+                    campaign_parser.print_help()
+            else:
+                redteam_parser.print_help()
 
         elif args.command == "status":
             cli.status()
