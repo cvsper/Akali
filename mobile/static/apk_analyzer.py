@@ -1,5 +1,6 @@
 import subprocess
 import xml.etree.ElementTree as ET
+import re
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
@@ -18,6 +19,35 @@ class AndroidManifest:
     target_sdk_version: int
     debuggable: bool
     activities: list[str]
+
+@dataclass
+class Secret:
+    type: str
+    value: str
+    file_path: Path
+    line_number: int
+    severity: str
+
+# Secret patterns
+SECRET_PATTERNS = {
+    'api_key': [
+        r'api[_-]?key.*?["\']([a-zA-Z0-9_-]{20,})["\']',
+        r'apikey.*?["\']([a-zA-Z0-9_-]{20,})["\']',
+    ],
+    'aws_key': [
+        r'AKIA[0-9A-Z]{16}',
+    ],
+    'password': [
+        r'password.*?["\']([^"\']{8,})["\']',
+    ],
+    'token': [
+        r'token.*?["\']([a-zA-Z0-9_-]{20,})["\']',
+        r'auth.*?["\']([a-zA-Z0-9_-]{20,})["\']',
+    ],
+    'private_key': [
+        r'-----BEGIN (RSA |EC )?PRIVATE KEY-----',
+    ]
+}
 
 class APKAnalyzer:
     """Android APK static analysis"""
@@ -82,3 +112,36 @@ class APKAnalyzer:
             debuggable=debuggable,
             activities=activities
         )
+
+    def find_secrets(self, code_dir: Path) -> list[Secret]:
+        """Scan for hardcoded secrets in decompiled code"""
+        secrets = []
+
+        # Scan all Java, Kotlin, XML files
+        for ext in ['*.java', '*.kt', '*.xml']:
+            for file_path in code_dir.rglob(ext):
+                try:
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        lines = f.readlines()
+
+                    for line_num, line in enumerate(lines, 1):
+                        for secret_type, patterns in SECRET_PATTERNS.items():
+                            for pattern in patterns:
+                                match = re.search(pattern, line, re.IGNORECASE)
+                                if match:
+                                    value = match.group(1) if match.groups() else match.group(0)
+
+                                    # Severity based on type
+                                    severity = 'critical' if secret_type in ['aws_key', 'private_key'] else 'high'
+
+                                    secrets.append(Secret(
+                                        type=secret_type,
+                                        value=value[:50],  # Truncate for safety
+                                        file_path=file_path,
+                                        line_number=line_num,
+                                        severity=severity
+                                    ))
+                except Exception:
+                    continue
+
+        return secrets
