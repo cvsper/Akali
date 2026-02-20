@@ -31,6 +31,11 @@ Offensive Examples (requires authorization):
   akali attack https://example.com --full     # Full offensive scan
   akali exploit CVE-2021-44228                # CVE lookup
 
+Fuzzing Examples (Phase 9A):
+  akali fuzz binary ./app --corpus ./inputs   # Fuzz binary application
+  akali fuzz network 10.0.0.5 --port 8080     # Fuzz network service
+  akali fuzz analyze ./crashes --report       # Analyze crash files
+
 Vault Examples:
   akali vault health --mock                   # Check Vault status (mock mode)
   akali vault get app/database --mock         # Get secret from Vault
@@ -84,9 +89,83 @@ For more help: https://github.com/sevs/akali
     attack_parser.add_argument("--ports", help="Port specification for network scan (e.g., 80,443)")
     attack_parser.add_argument("--wordlist", help="Wordlist path for API endpoint discovery")
 
-    # Exploit command
-    exploit_parser = subparsers.add_parser("exploit", help="Look up CVE and exploit information")
-    exploit_parser.add_argument("cve_id", help="CVE identifier (e.g., CVE-2021-44228)")
+    # Exploit command with subcommands (Phase 9A)
+    exploit_parser = subparsers.add_parser("exploit", help="Exploit database and CVE lookup")
+    exploit_subparsers = exploit_parser.add_subparsers(dest="exploit_command")
+
+    # Legacy CVE lookup (for backward compatibility)
+    exploit_lookup_parser = exploit_subparsers.add_parser("lookup", help="Look up CVE information")
+    exploit_lookup_parser.add_argument("cve_id", help="CVE identifier (e.g., CVE-2021-44228)")
+
+    # Database search
+    exploit_search_parser = exploit_subparsers.add_parser("search", help="Search exploit databases")
+    exploit_search_parser.add_argument("query", help="Search query (CVE, keywords, etc.)")
+    exploit_search_parser.add_argument("--source", choices=["all", "exploitdb", "github", "metasploit"], default="all", help="Source to search")
+    exploit_search_parser.add_argument("--category", help="Filter by category (e.g., webapp, network)")
+
+    # Download exploit
+    exploit_download_parser = exploit_subparsers.add_parser("download", help="Download exploit by ID")
+    exploit_download_parser.add_argument("exploit_id", help="Exploit ID (e.g., EDB-12345, GitHub URL)")
+    exploit_download_parser.add_argument("--output", help="Output path (default: current directory)")
+
+    # List exploits by category
+    exploit_list_parser = exploit_subparsers.add_parser("list", help="List available exploits")
+    exploit_list_parser.add_argument("--category", help="Filter by category")
+    exploit_list_parser.add_argument("--platform", help="Filter by platform")
+
+    # Generate exploit payloads (Phase 9A)
+    exploit_generate_parser = exploit_subparsers.add_parser("generate", help="Generate exploit payloads")
+    exploit_generate_subparsers = exploit_generate_parser.add_subparsers(dest="generate_type")
+
+    # SQL injection payload generation
+    generate_sqli_parser = exploit_generate_subparsers.add_parser("sqli", help="Generate SQL injection payloads")
+    generate_sqli_parser.add_argument("--db", required=True, choices=["mysql", "postgresql", "mssql", "oracle"], help="Target database")
+    generate_sqli_parser.add_argument("--type", choices=["union", "blind", "error", "stacked", "auth_bypass"], default="union", help="Payload type")
+    generate_sqli_parser.add_argument("--encode", choices=["url", "hex", "base64"], help="Encode payloads")
+
+    # XSS payload generation
+    generate_xss_parser = exploit_generate_subparsers.add_parser("xss", help="Generate XSS payloads")
+    generate_xss_parser.add_argument("--context", required=True, choices=["script", "html", "attribute", "url", "css", "json"], help="Injection context")
+    generate_xss_parser.add_argument("--type", choices=["reflected", "stored", "dom"], default="reflected", help="XSS type")
+    generate_xss_parser.add_argument("--encode", choices=["url", "html-entities", "unicode", "hex"], help="Encode payloads")
+    generate_xss_parser.add_argument("--evasion", action="store_true", help="Enable filter evasion")
+
+    # Buffer overflow payload generation
+    generate_bof_parser = exploit_generate_subparsers.add_parser("bof", help="Generate buffer overflow exploit")
+    generate_bof_parser.add_argument("--offset", type=int, required=True, help="Offset to return address")
+    generate_bof_parser.add_argument("--shellcode", required=True, help="Shellcode (hex string or 'reverse_tcp')")
+    generate_bof_parser.add_argument("--bad-chars", help="Bad characters to avoid (e.g., '00,0a,0d')")
+    generate_bof_parser.add_argument("--ret-addr", help="Return address in hex (little-endian)")
+    generate_bof_parser.add_argument("--output", help="Output file path")
+
+    # ROP chain generation
+    generate_rop_parser = exploit_generate_subparsers.add_parser("rop", help="Generate ROP chain")
+    generate_rop_parser.add_argument("--binary", required=True, help="Path to target binary")
+    generate_rop_parser.add_argument("--goal", choices=["shell", "system", "mprotect"], default="shell", help="ROP chain goal")
+    generate_rop_parser.add_argument("--output", help="Output file path")
+
+    # Fuzz command (Phase 9A)
+    fuzz_parser = subparsers.add_parser("fuzz", help="Fuzzing framework for vulnerability discovery")
+    fuzz_subparsers = fuzz_parser.add_subparsers(dest="fuzz_command")
+
+    # Binary fuzzing
+    fuzz_binary_parser = fuzz_subparsers.add_parser("binary", help="Fuzz binary application")
+    fuzz_binary_parser.add_argument("binary_path", help="Path to binary to fuzz")
+    fuzz_binary_parser.add_argument("--corpus", required=True, help="Directory containing seed inputs")
+    fuzz_binary_parser.add_argument("--timeout", type=int, default=3600, help="Fuzzing timeout in seconds (default: 3600)")
+
+    # Network fuzzing
+    fuzz_network_parser = fuzz_subparsers.add_parser("network", help="Fuzz network service")
+    fuzz_network_parser.add_argument("target", help="Target hostname or IP")
+    fuzz_network_parser.add_argument("--port", type=int, required=True, help="Target port")
+    fuzz_network_parser.add_argument("--protocol", choices=["tcp", "udp", "http"], default="tcp", help="Protocol to fuzz (default: tcp)")
+    fuzz_network_parser.add_argument("--iterations", type=int, default=1000, help="Number of iterations (default: 1000)")
+    fuzz_network_parser.add_argument("--corpus", help="Optional directory with seed inputs")
+
+    # Crash analysis
+    fuzz_analyze_parser = fuzz_subparsers.add_parser("analyze", help="Analyze crash files")
+    fuzz_analyze_parser.add_argument("crash_dir", help="Directory containing crash files")
+    fuzz_analyze_parser.add_argument("--report", action="store_true", help="Generate detailed report")
 
     # Schedule command (autonomous)
     schedule_parser = subparsers.add_parser("schedule", help="Manage scheduled jobs")
@@ -553,7 +632,43 @@ For more help: https://github.com/sevs/akali
                 sys.exit(0)
 
         elif args.command == "exploit":
-            cli.exploit(args.cve_id)
+            if args.exploit_command == "lookup":
+                cli.exploit(args.cve_id)
+            elif args.exploit_command == "search":
+                cli.exploit_search(args.query, source=args.source, category=args.category)
+            elif args.exploit_command == "download":
+                cli.exploit_download(args.exploit_id, output_path=args.output)
+            elif args.exploit_command == "list":
+                cli.exploit_list(category=args.category, platform=args.platform)
+            elif args.exploit_command == "generate":
+                if args.generate_type == "sqli":
+                    cli.exploit_generate_sqli(db=args.db, payload_type=args.type, encoding=args.encode)
+                elif args.generate_type == "xss":
+                    cli.exploit_generate_xss(context=args.context, xss_type=args.type,
+                                            encoding=args.encode, evasion=args.evasion)
+                elif args.generate_type == "bof":
+                    cli.exploit_generate_bof(offset=args.offset, shellcode=args.shellcode,
+                                            bad_chars=args.bad_chars, ret_addr=args.ret_addr,
+                                            output=args.output)
+                elif args.generate_type == "rop":
+                    cli.exploit_generate_rop(binary=args.binary, goal=args.goal, output=args.output)
+                else:
+                    exploit_generate_parser.print_help()
+            elif hasattr(args, 'cve_id'):  # Backward compat: no subcommand but cve_id arg
+                cli.exploit(args.cve_id)
+            else:
+                exploit_parser.print_help()
+
+        elif args.command == "fuzz":
+            if args.fuzz_command == "binary":
+                cli.fuzz_binary(args.binary_path, args.corpus, timeout=args.timeout)
+            elif args.fuzz_command == "network":
+                cli.fuzz_network(args.target, args.port, protocol=args.protocol,
+                               iterations=args.iterations, corpus_dir=args.corpus)
+            elif args.fuzz_command == "analyze":
+                cli.fuzz_analyze(args.crash_dir, report=args.report)
+            else:
+                fuzz_parser.print_help()
 
         elif args.command == "schedule":
             if args.schedule_command == "list":
